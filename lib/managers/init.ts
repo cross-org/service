@@ -69,9 +69,8 @@ class InitService {
    * @returns {string} - The configuration file content.
    */
   generateConfig(config: InstallServiceOptions): string {
-    const denoPath = Deno.execPath();
     const command = config.cmd;
-    const servicePath = `${config.path?.join(":")}:${denoPath}:${getEnv("HOME")}/.deno/bin`;
+    const servicePath = `${config.path?.join(":")}:${getEnv("PATH")}`;
 
     let initScriptContent = initScriptTemplate.replace(/{{name}}/g, config.name);
     initScriptContent = initScriptContent.replace("{{command}}", command);

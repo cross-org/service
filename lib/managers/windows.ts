@@ -125,8 +125,7 @@ class WindowsService {
    * @returns {string} The generated batch file content as a string.
    */
   generateConfig(options: InstallServiceOptions): string {
-    const denoPath = Deno.execPath();
-    const defaultPath = `%PATH%;${denoPath};${options.home}\\.deno\\bin`;
+    const defaultPath = `%PATH%;`;
     const envPath = options.path ? `${defaultPath};${options.path.join(";")}` : defaultPath;
     const workingDirectory = options.cwd ? options.cwd : cwd();
 
@@ -141,7 +140,7 @@ class WindowsService {
       }
     }
 
-    batchFileContent += `"${denoPath}" run -A --allow-ffi --unstable https://deno.land/x/windows_service@1.0.11/run.ts --serviceName ${options.name} -- ${options.cmd}\n`;
+    batchFileContent += `"deno run -A --allow-ffi --unstable https://deno.land/x/windows_service@1.0.11/run.ts --serviceName ${options.name} -- ${options.cmd}\n`;
 
     return batchFileContent;
   }

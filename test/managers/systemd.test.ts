@@ -18,7 +18,6 @@ test("generateConfig should create a valid service configuration", () => {
   assertStringIncludes(generatedConfig, "Description=test-service (Deno Service)");
   assertStringIncludes(generatedConfig, 'ExecStart=/bin/sh -c "deno run --allow-net server.ts"');
   assertStringIncludes(generatedConfig, "Environment=PATH=");
-  assertStringIncludes(generatedConfig, "/home/testuser/.deno/bin");
   assertStringIncludes(generatedConfig, "WantedBy=default.target");
   assertStringIncludes(generatedConfig, "/usr/local/bin");
 });

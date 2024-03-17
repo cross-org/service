@@ -39,8 +39,7 @@ class UpstartService {
    * @returns The generated Upstart configuration file content.
    */
   generateConfig(config: InstallServiceOptions): string {
-    const denoPath = Deno.execPath();
-    const defaultPath = `${denoPath}:${getEnv("HOME")}/.deno/bin`;
+    const defaultPath = getEnv("PATH") || "";
     const envPath = config.path ? `${defaultPath}:${config.path.join(":")}` : defaultPath;
 
     let upstartFileContent = upstartFileTemplate.replace(

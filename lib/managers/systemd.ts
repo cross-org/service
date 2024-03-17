@@ -10,6 +10,7 @@ import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { dirname, join } from "@std/path";
 import { cwd, exit, spawn } from "@cross/utils";
 import { mkdir, mkdtemp, unlink, writeFile } from "node:fs/promises";
+import { getEnv } from "@cross/env";
 
 const serviceFileTemplate = `[Unit]
 Description={{name}} (Deno Service)
@@ -164,8 +165,7 @@ class SystemdService {
    * @returns {string} The generated systemd service configuration file content as a string.
    */
   generateConfig(options: InstallServiceOptions): string {
-    const denoPath = Deno.execPath();
-    const defaultPath = `PATH=${denoPath}:${options.home}/.deno/bin`;
+    const defaultPath = `PATH=${getEnv("PATH")}`;
     const envPath = options.path ? `${defaultPath}:${options.path.join(":")}` : defaultPath;
     const workingDirectory = options.cwd ? options.cwd : cwd();
 

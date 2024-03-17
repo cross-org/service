@@ -9,6 +9,7 @@ import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { dirname } from "@std/path";
 import { cwd, exit } from "@cross/utils";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { getEnv } from "@cross/env";
 
 const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -40,9 +41,8 @@ class LaunchdService {
    * @returns {string} The generated Launchd plist configuration file content as a string.
    */
   generateConfig(options: InstallServiceOptions): string {
-    const denoPath = Deno.execPath();
     const commandArgs = options.cmd.split(" ");
-    const servicePath = `${options.path?.join(":")}:${denoPath}:${options.home}/.deno/bin`;
+    const servicePath = `${options.path?.join(":")}:${getEnv("PATH")}`;
     const workingDirectory = options.cwd ? options.cwd : cwd();
 
     let plistContent = plistTemplate.replace(/{{name}}/g, options.name);
