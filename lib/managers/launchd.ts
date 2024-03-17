@@ -4,11 +4,11 @@
  * @file      lib/managers/launchd.ts
  * @license   MIT
  */
-import { exists } from "../utils/exists.ts"
-import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts"
-import { dirname } from "@std/path"
-import { cwd, exit } from "@cross/utils"
-import { mkdir, unlink, writeFile } from "node:fs/promises"
+import { exists } from "../utils/exists.ts";
+import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
+import { dirname } from "@std/path";
+import { cwd, exit } from "@cross/utils";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 
 const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -30,7 +30,7 @@ const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
     <true/>
   </dict>
 </plist>
-`
+`;
 
 class LaunchdService {
   /**
@@ -40,73 +40,73 @@ class LaunchdService {
    * @returns {string} The generated Launchd plist configuration file content as a string.
    */
   generateConfig(options: InstallServiceOptions): string {
-    const denoPath = Deno.execPath()
-    const commandArgs = options.cmd.split(" ")
-    const servicePath = `${options.path?.join(":")}:${denoPath}:${options.home}/.deno/bin`
-    const workingDirectory = options.cwd ? options.cwd : cwd()
+    const denoPath = Deno.execPath();
+    const commandArgs = options.cmd.split(" ");
+    const servicePath = `${options.path?.join(":")}:${denoPath}:${options.home}/.deno/bin`;
+    const workingDirectory = options.cwd ? options.cwd : cwd();
 
-    let plistContent = plistTemplate.replace(/{{name}}/g, options.name)
-    plistContent = plistContent.replace(/{{path}}/g, servicePath)
-    plistContent = plistContent.replace(/{{workingDirectory}}/g, workingDirectory)
+    let plistContent = plistTemplate.replace(/{{name}}/g, options.name);
+    plistContent = plistContent.replace(/{{path}}/g, servicePath);
+    plistContent = plistContent.replace(/{{workingDirectory}}/g, workingDirectory);
 
-    let programArguments = ""
+    let programArguments = "";
     for (const arg of commandArgs) {
-      programArguments += `      <string>${arg}</string>\n`
+      programArguments += `      <string>${arg}</string>\n`;
     }
-    plistContent = plistContent.replace("{{command}}", programArguments)
+    plistContent = plistContent.replace("{{command}}", programArguments);
 
     // Add extra environment variables
     if (options.env && options.env.length > 0) {
-      let extraEnvs = ""
+      let extraEnvs = "";
       for (const env of options.env) {
-        const envSplit = env.split("=")
-        extraEnvs += `      <key>${envSplit[0]}</key>\n      <string>${envSplit[1]}</string>\n`
+        const envSplit = env.split("=");
+        extraEnvs += `      <key>${envSplit[0]}</key>\n      <string>${envSplit[1]}</string>\n`;
       }
-      plistContent = plistContent.replace("{{extraEnvs}}", extraEnvs)
+      plistContent = plistContent.replace("{{extraEnvs}}", extraEnvs);
     } else {
-      plistContent = plistContent.replace("{{extraEnvs}}", "")
+      plistContent = plistContent.replace("{{extraEnvs}}", "");
     }
 
-    return plistContent
+    return plistContent;
   }
 
   async install(config: InstallServiceOptions, onlyGenerate: boolean) {
-    const plistFileName = `${config.name}.plist`
+    const plistFileName = `${config.name}.plist`;
 
     // Different paths for user and system mode
-    const plistPathUser = `${config.home}/Library/LaunchAgents/${plistFileName}`
-    const plistPathSystem = `/Library/LaunchDaemons/${plistFileName}`
-    const plistPath = config.system ? plistPathSystem : plistPathUser
+    const plistPathUser = `${config.home}/Library/LaunchAgents/${plistFileName}`;
+    const plistPathSystem = `/Library/LaunchDaemons/${plistFileName}`;
+    const plistPath = config.system ? plistPathSystem : plistPathUser;
 
     // Do not allow to overwrite existing services, regardless of mode
     if (await exists(plistPathUser) || await exists(plistPathSystem)) {
-      console.error(`Service '${config.name}' already exists. Exiting.`)
-      exit(1)
+      console.error(`Service '${config.name}' already exists. Exiting.`);
+      exit(1);
     }
 
-    const plistContent = this.generateConfig(config)
+    const plistContent = this.generateConfig(config);
 
     if (onlyGenerate) {
-      console.log("\nThis is a dry-run, nothing will be written to disk or installed.")
-      console.log("\nPath: ", plistPath)
-      console.log("\nConfiguration:\n")
-      console.log(plistContent)
+      console.log("\nThis is a dry-run, nothing will be written to disk or installed.");
+      console.log("\nPath: ", plistPath);
+      console.log("\nConfiguration:\n");
+      console.log(plistContent);
     } else {
-      const plistDir = dirname(plistPath)
-      await mkdir(plistDir, { recursive: true })
+      const plistDir = dirname(plistPath);
+      await mkdir(plistDir, { recursive: true });
 
       // ToDo: Remember to rollback on failure
-      await writeFile(plistPath, plistContent)
+      await writeFile(plistPath, plistContent);
 
-      console.log(`Service '${config.name}' installed at '${plistPath}'.`)
+      console.log(`Service '${config.name}' installed at '${plistPath}'.`);
 
       // ToDo: Actually run the service and verify that it works, if not - use the rollback function
       if (config.system) {
-        console.log("Please run the following command as root to load the service:")
-        console.log(`sudo launchctl load ${plistPath}`)
+        console.log("Please run the following command as root to load the service:");
+        console.log(`sudo launchctl load ${plistPath}`);
       } else {
-        console.log("Please run the following command to load the service:")
-        console.log(`launchctl load ${plistPath}`)
+        console.log("Please run the following command to load the service:");
+        console.log(`launchctl load ${plistPath}`);
       }
     }
   }
@@ -119,10 +119,10 @@ class LaunchdService {
   */
   async rollback(plistPath: string) {
     try {
-      await unlink(plistPath)
-      console.log(`Changes rolled back: Removed '${plistPath}'.`)
+      await unlink(plistPath);
+      console.log(`Changes rolled back: Removed '${plistPath}'.`);
     } catch (error) {
-      console.error(`Failed to rollback changes: Could not remove '${plistPath}'. Error: ${error.message}`)
+      console.error(`Failed to rollback changes: Could not remove '${plistPath}'. Error: ${error.message}`);
     }
   }
 
@@ -133,34 +133,34 @@ class LaunchdService {
    * @throws Will throw an error if unable to remove the service configuration file.
    */
   async uninstall(config: UninstallServiceOptions) {
-    const plistFileName = `${config.name}.plist`
+    const plistFileName = `${config.name}.plist`;
     // Different paths for user and system mode
-    const plistPathUser = `${config.home}/Library/LaunchAgents/${plistFileName}`
-    const plistPathSystem = `/Library/LaunchDaemons/${plistFileName}`
-    const plistPath = config.system ? plistPathSystem : plistPathUser
+    const plistPathUser = `${config.home}/Library/LaunchAgents/${plistFileName}`;
+    const plistPathSystem = `/Library/LaunchDaemons/${plistFileName}`;
+    const plistPath = config.system ? plistPathSystem : plistPathUser;
 
     // Check if the service exists
     if (!await exists(plistPath)) {
-      console.error(`Service '${config.name}' does not exist. Exiting.`)
-      exit(1)
+      console.error(`Service '${config.name}' does not exist. Exiting.`);
+      exit(1);
     }
 
     try {
-      await unlink(plistPath)
-      console.log(`Service '${config.name}' uninstalled successfully.`)
+      await unlink(plistPath);
+      console.log(`Service '${config.name}' uninstalled successfully.`);
 
       // Unload the service
       if (config.system) {
-        console.log("Please run the following command as root to unload the service (if it's running):")
-        console.log(`sudo launchctl unload ${plistPath}`)
+        console.log("Please run the following command as root to unload the service (if it's running):");
+        console.log(`sudo launchctl unload ${plistPath}`);
       } else {
-        console.log("Please run the following command to unload the service (if it's running):")
-        console.log(`launchctl unload ${plistPath}`)
+        console.log("Please run the following command to unload the service (if it's running):");
+        console.log(`launchctl unload ${plistPath}`);
       }
     } catch (error) {
-      console.error(`Failed to uninstall service: Could not remove '${plistPath}'. Error:`, error.message)
+      console.error(`Failed to uninstall service: Could not remove '${plistPath}'. Error:`, error.message);
     }
   }
 }
 
-export { LaunchdService }
+export { LaunchdService };

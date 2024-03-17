@@ -5,7 +5,7 @@
  * @license   MIT
  */
 
-import { main } from "./lib/cli/main.ts"
-import { args } from "@cross/utils"
+import { main } from "./lib/cli/main.ts";
+import { args } from "@cross/utils";
 
-main(args())
+main(args());

@@ -15,13 +15,13 @@ Service is a JavaScript/TypeScript module for managing system services. It offer
 To use Service as a CLI program, you can install or upgrade it using Deno:
 
 ```sh
-deno install -frA --name service jsr:@cross/service@x.y.z
+deno install -frA --name service jsr:@cross/service/install@1.0.0-rc.1
 ```
 
 For library usage, install according to the instructions at [jsr.io/@cross/service](https://jsr.io/@cross/service) and simply import the `installService()` function from the `mod.ts` file:
 
 ```ts
-import { installService } from "@cross/service"
+import { installService } from "@cross/service";
 ```
 
 ## CLI Usage
@@ -71,14 +71,14 @@ This is the interface for the options used by the `installService` function:
 
 ```ts
 interface InstallServiceOptions {
-  system: boolean
-  name: string
-  cmd: string
-  user?: string
-  home?: string
-  cwd?: string
-  path?: string[]
-  env?: string[]
+  system: boolean;
+  name: string;
+  cmd: string;
+  user?: string;
+  home?: string;
+  cwd?: string;
+  path?: string[];
+  env?: string[];
 }
 ```
 
@@ -86,9 +86,9 @@ The interface for the `uninstallService` function is very similar:
 
 ```ts
 interface UninstallServiceOptions {
-  system: boolean
-  name: string
-  home?: string
+  system: boolean;
+  name: string;
+  home?: string;
 }
 ```
 
@@ -97,7 +97,7 @@ interface UninstallServiceOptions {
 The `installService` function installs a command as a service, using the current service manager:
 
 ```ts
-import { installService } from "@cross/service"
+import { installService } from "@cross/service";
 
 await installService({
   system: false, // Use user mode if available (default) or force system mode
@@ -108,7 +108,7 @@ await installService({
   cwd: "/path/to/working/directory", // Optional, defaults to current working directory
   path: ["/extra/path", "/extra/path/2"], // Optional
   env: ["KEY=VALUE", "KEY2=VALUE2"], // Optional
-})
+});
 ```
 
 ### uninstallService
@@ -116,13 +116,13 @@ await installService({
 The `uninstallService` function uninstalls a command from a service, using the currently installed service manager:
 
 ```ts
-import { uninstallService } from "@cross/service"
+import { uninstallService } from "@cross/service";
 
 await uninstallService({
   system: false, // Use user mode if available (default) or force system mode
   name: "my-service",
   home: "/home/username", // Optional, defaults to current user's home, used in case of user services
-})
+});
 ```
 
 ### generateConfig
@@ -130,7 +130,7 @@ await uninstallService({
 The `generateConfig` function generates a service configuration string for the specified service:
 
 ```ts
-import { generateConfig } from "@cross/service"
+import { generateConfig } from "@cross/service";
 
 const config = await generateConfig({
   system: false, // Use user mode if available (default) or force system mode
@@ -141,9 +141,9 @@ const config = await generateConfig({
   cwd: "/path/to/working/directory", // Optional, defaults to current working directory,
   path: ["/extra/path", "/extra/path/2"], // Optional
   env: ["KEY=VALUE", "KEY2=VALUE2"], // Optional
-})
+});
 
-console.log(config)
+console.log(config);
 ```
 
 ## Contributing
@@ -167,7 +167,7 @@ Before submitting a pull request, please ensure your code follows the project's 
  * When done, add this new implementation to lib/service.ts
  */
 
-import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts"
+import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 
 class ManagerTemplate {
   /**
@@ -177,7 +177,7 @@ class ManagerTemplate {
    */
   generateConfig(config: InstallServiceOptions): string {
     // TODO: Implement this method for the target init system.
-    throw new Error("Not implemented")
+    throw new Error("Not implemented");
   }
 
   /**
@@ -191,7 +191,7 @@ class ManagerTemplate {
    */
   async install(config: InstallServiceOptions, onlyGenerate: boolean) {
     // TODO: Implement this method for the target init system.
-    throw new Error("Not implemented")
+    throw new Error("Not implemented");
   }
 
   /**
@@ -200,9 +200,9 @@ class ManagerTemplate {
    */
   async uninstall(config: UninstallServiceOptions) {
     // TODO: Implement this method for the target init system.
-    throw new Error("Not implemented")
+    throw new Error("Not implemented");
   }
 }
 
-export { ManagerTemplate }
+export { ManagerTemplate };
 ```

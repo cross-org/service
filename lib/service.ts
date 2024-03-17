@@ -1,12 +1,12 @@
-import { SystemdService } from "./managers/systemd.ts"
-import { InitService } from "./managers/init.ts"
-import { UpstartService } from "./managers/upstart.ts"
-import { LaunchdService } from "./managers/launchd.ts"
-import { WindowsService } from "./managers/windows.ts"
-import { CurrentOS, OperatingSystem } from "@cross/runtime"
-import { getEnv } from "@cross/env"
-import { cwd, spawn } from "@cross/utils"
-import { stat } from "node:fs/promises"
+import { SystemdService } from "./managers/systemd.ts";
+import { InitService } from "./managers/init.ts";
+import { UpstartService } from "./managers/upstart.ts";
+import { LaunchdService } from "./managers/launchd.ts";
+import { WindowsService } from "./managers/windows.ts";
+import { CurrentOS, OperatingSystem } from "@cross/runtime";
+import { getEnv } from "@cross/env";
+import { cwd, spawn } from "@cross/utils";
+import { stat } from "node:fs/promises";
 
 /**
  * Exports helper functions to install any command as a system service
@@ -29,14 +29,14 @@ import { stat } from "node:fs/promises"
  * @property {string[]} [path] - Folders passed to PATH, as services normally don't have the normal PATH of shell, you'll have to pass all needed paths here
  */
 interface InstallServiceOptions {
-  system: boolean
-  name: string
-  cmd: string
-  user?: string
-  home?: string
-  cwd?: string
-  path?: string[]
-  env?: string[]
+  system: boolean;
+  name: string;
+  cmd: string;
+  user?: string;
+  home?: string;
+  cwd?: string;
+  path?: string[];
+  env?: string[];
 }
 
 /**
@@ -48,15 +48,15 @@ interface InstallServiceOptions {
  * @property {string} [home] - The user's home directory path (default: current user's home). Needed if the service is installed as a user service
  */
 interface UninstallServiceOptions {
-  system: boolean
-  name: string
-  home?: string
+  system: boolean;
+  name: string;
+  home?: string;
 }
 
 interface ServiceManagerImplementation {
-  install(options: InstallServiceOptions, onlyGenerate: boolean): Promise<void>
-  uninstall(options: UninstallServiceOptions): Promise<void> | void
-  generateConfig(options: InstallServiceOptions): string
+  install(options: InstallServiceOptions, onlyGenerate: boolean): Promise<void>;
+  uninstall(options: UninstallServiceOptions): Promise<void> | void;
+  generateConfig(options: InstallServiceOptions): string;
 }
 
 /**
@@ -76,65 +76,65 @@ function prepareConfig<T extends InstallServiceOptions | UninstallServiceOptions
     cwd: "cwd" in options ? options.cwd || cwd() : undefined,
     path: "path" in options ? options.path : undefined,
     env: "env" in options ? options.env : undefined,
-  } as T
+  } as T;
 }
 
 class ServiceManager {
-  private managers: Map<string, ServiceManagerImplementation> = new Map()
+  private managers: Map<string, ServiceManagerImplementation> = new Map();
 
   register(initSystem: string, manager: ServiceManagerImplementation) {
-    this.managers.set(initSystem, manager)
+    this.managers.set(initSystem, manager);
   }
 
   async installService(initSystem: string, options: InstallServiceOptions, onlyGenerate: boolean) {
-    const manager = this.managers.get(initSystem)
+    const manager = this.managers.get(initSystem);
 
     if (!manager) {
-      throw new Error(`Unsupported init system: ${initSystem}`)
+      throw new Error(`Unsupported init system: ${initSystem}`);
     }
 
-    await manager.install(options, onlyGenerate)
+    await manager.install(options, onlyGenerate);
   }
 
   async generateConfig(initSystem: string, options: InstallServiceOptions): Promise<string> {
-    const manager = this.managers.get(initSystem)
+    const manager = this.managers.get(initSystem);
 
     if (!manager) {
-      throw new Error(`Unsupported init system: ${initSystem}`)
+      throw new Error(`Unsupported init system: ${initSystem}`);
     }
 
-    return await manager.generateConfig(options)
+    return await manager.generateConfig(options);
   }
 
   async uninstallService(initSystem: string, options: UninstallServiceOptions) {
-    const manager = this.managers.get(initSystem)
+    const manager = this.managers.get(initSystem);
 
     if (!manager) {
-      throw new Error(`Unsupported init system: ${initSystem}`)
+      throw new Error(`Unsupported init system: ${initSystem}`);
     }
 
-    await manager.uninstall(options)
+    await manager.uninstall(options);
   }
 }
 
-const serviceManager = new ServiceManager() // Register available managers
+const serviceManager = new ServiceManager(); // Register available managers
 
-serviceManager.register("systemd", new SystemdService())
-serviceManager.register("sysvinit", new InitService())
-serviceManager.register("docker-init", new InitService())
-serviceManager.register("upstart", new UpstartService())
-serviceManager.register("launchd", new LaunchdService())
-serviceManager.register("windows", new WindowsService())
+serviceManager.register("systemd", new SystemdService());
+serviceManager.register("sysvinit", new InitService());
+serviceManager.register("docker-init", new InitService());
+serviceManager.register("upstart", new UpstartService());
+serviceManager.register("launchd", new LaunchdService());
+serviceManager.register("windows", new WindowsService());
 
 async function installService(options: InstallServiceOptions, onlyGenerate: boolean, forceInitSystem?: string) {
   if (forceInitSystem && !onlyGenerate) {
-    throw new Error("Manually selecting an init system is not possible while installing.")
+    throw new Error("Manually selecting an init system is not possible while installing.");
   }
 
-  const config = prepareConfig(options)
+  const config = prepareConfig(options);
 
-  const initSystem = forceInitSystem || await detectInitSystem()
-  await serviceManager.installService(initSystem, config, onlyGenerate)
+  const initSystem = forceInitSystem || await detectInitSystem();
+  await serviceManager.installService(initSystem, config, onlyGenerate);
 }
 
 /**
@@ -146,10 +146,10 @@ async function installService(options: InstallServiceOptions, onlyGenerate: bool
  * @param {InstallServiceOptions} options - Options for the uninstallService function.
  */
 async function uninstallService(options: UninstallServiceOptions, forceInitSystem?: string) {
-  const config = prepareConfig(options)
+  const config = prepareConfig(options);
 
-  const initSystem = forceInitSystem || await detectInitSystem()
-  await serviceManager.uninstallService(initSystem, config)
+  const initSystem = forceInitSystem || await detectInitSystem();
+  await serviceManager.uninstallService(initSystem, config);
 }
 
 /**
@@ -160,45 +160,45 @@ async function uninstallService(options: UninstallServiceOptions, forceInitSyste
  * @param {InstallServiceOptions} options - Options for the generateConfig function.
  */
 async function generateConfig(options: InstallServiceOptions, forceInitSystem?: string): Promise<string> {
-  const config = prepareConfig(options)
-  const initSystem = forceInitSystem || await detectInitSystem()
-  return await serviceManager.generateConfig(initSystem, config)
+  const config = prepareConfig(options);
+  const initSystem = forceInitSystem || await detectInitSystem();
+  return await serviceManager.generateConfig(initSystem, config);
 }
 
 async function detectInitSystem(): Promise<string> {
   if (CurrentOS === OperatingSystem.macOS) {
-    return "launchd"
+    return "launchd";
   }
 
   if (CurrentOS === OperatingSystem.Windows) {
-    return "windows"
+    return "windows";
   }
 
-  const process = await spawn(["ps", "-p", "1", "-o", "comm="])
+  const process = await spawn(["ps", "-p", "1", "-o", "comm="]);
 
   if (process.stdout.includes("systemd")) {
-    return "systemd"
+    return "systemd";
   } else if (process.stdout.includes("init")) {
     // Check for Upstart
     try {
-      const statInitCtl = await stat("/sbin/initctl")
-      const statInit = await stat("/etc/init")
+      const statInitCtl = await stat("/sbin/initctl");
+      const statInit = await stat("/etc/init");
       if (statInitCtl.isFile() && statInit.isDirectory()) {
-        return "upstart"
+        return "upstart";
       } else {
-        return "sysvinit"
+        return "sysvinit";
       }
     } catch (_e) {
-      return "sysvinit"
+      return "sysvinit";
     }
   } else if (process.stdout.includes("openrc")) {
-    return "openrc"
+    return "openrc";
   } else if (process.stdout.includes("docker-init")) {
-    return "dockerinit"
+    return "dockerinit";
   } else {
-    throw new Error("Unsupported init system.")
+    throw new Error("Unsupported init system.");
   }
 }
 
-export { generateConfig, installService, uninstallService }
-export type { InstallServiceOptions, UninstallServiceOptions }
+export { generateConfig, installService, uninstallService };
+export type { InstallServiceOptions, UninstallServiceOptions };

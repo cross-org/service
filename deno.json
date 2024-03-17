@@ -1,9 +1,8 @@
 {
   "name": "@cross/service",
-  "version": "1.0.0-rc.0",
+  "version": "1.0.0-rc.1",
   "fmt": {
-    "lineWidth": 200,
-    "semiColons": false
+    "lineWidth": 200
   },
   "tasks": {
     "check": "deno fmt && deno lint && deno check service.ts && deno test --allow-read --allow-write --allow-env --allow-net"
@@ -12,8 +11,12 @@
     "@cross/env": "jsr:@cross/env@^0.2.7",
     "@cross/runtime": "jsr:@cross/runtime@^0.0.17",
     "@cross/test": "jsr:@cross/test@^0.0.8",
-    "@cross/utils": "jsr:@cross/utils@^0.6.0",
+    "@cross/utils": "jsr:@cross/utils@^0.6.1",
     "@std/assert": "jsr:@std/assert@^0.220.1",
     "@std/path": "jsr:@std/path@^0.220.1"
+  },
+  "exports": {
+    ".": "./mod.ts",
+    "./install": "./service.ts"
   }
 }
