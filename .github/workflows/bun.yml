@@ -10,5 +10,5 @@ jobs:
       - uses: antongolub/action-setup-bun@v1.12.8 
         with:
           bun-version: v1.x # Uses latest bun 1
-      - run: bun x jsr add @cross/test @std/assert @cross/runtime # Installs dependencies
+      - run: bun x jsr add @cross/test @std/assert @cross/runtime @cross/utils @std/path # Installs dependencies
       - run: bun test # Runs the tests
