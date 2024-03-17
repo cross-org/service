@@ -4,9 +4,11 @@
  * @file      lib/managers/launchd.ts
  * @license   MIT
  */
-
-import { existsSync, path } from "../../deps.ts"
+import { exists } from "../utils/exists.ts"
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts"
+import { dirname } from "@std/path"
+import { cwd, exit } from "@cross/utils"
+import { mkdir, unlink, writeFile } from "node:fs/promises"
 
 const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -41,7 +43,7 @@ class LaunchdService {
     const denoPath = Deno.execPath()
     const commandArgs = options.cmd.split(" ")
     const servicePath = `${options.path?.join(":")}:${denoPath}:${options.home}/.deno/bin`
-    const workingDirectory = options.cwd ? options.cwd : Deno.cwd()
+    const workingDirectory = options.cwd ? options.cwd : cwd()
 
     let plistContent = plistTemplate.replace(/{{name}}/g, options.name)
     plistContent = plistContent.replace(/{{path}}/g, servicePath)
@@ -77,9 +79,9 @@ class LaunchdService {
     const plistPath = config.system ? plistPathSystem : plistPathUser
 
     // Do not allow to overwrite existing services, regardless of mode
-    if (existsSync(plistPathUser) || existsSync(plistPathSystem)) {
+    if (await exists(plistPathUser) || await exists(plistPathSystem)) {
       console.error(`Service '${config.name}' already exists. Exiting.`)
-      Deno.exit(1)
+      exit(1)
     }
 
     const plistContent = this.generateConfig(config)
@@ -90,11 +92,11 @@ class LaunchdService {
       console.log("\nConfiguration:\n")
       console.log(plistContent)
     } else {
-      const plistDir = path.dirname(plistPath)
-      await Deno.mkdir(plistDir, { recursive: true })
+      const plistDir = dirname(plistPath)
+      await mkdir(plistDir, { recursive: true })
 
       // ToDo: Remember to rollback on failure
-      await Deno.writeTextFile(plistPath, plistContent)
+      await writeFile(plistPath, plistContent)
 
       console.log(`Service '${config.name}' installed at '${plistPath}'.`)
 
@@ -117,7 +119,7 @@ class LaunchdService {
   */
   async rollback(plistPath: string) {
     try {
-      await Deno.remove(plistPath)
+      await unlink(plistPath)
       console.log(`Changes rolled back: Removed '${plistPath}'.`)
     } catch (error) {
       console.error(`Failed to rollback changes: Could not remove '${plistPath}'. Error: ${error.message}`)
@@ -138,13 +140,13 @@ class LaunchdService {
     const plistPath = config.system ? plistPathSystem : plistPathUser
 
     // Check if the service exists
-    if (!existsSync(plistPath)) {
+    if (!await exists(plistPath)) {
       console.error(`Service '${config.name}' does not exist. Exiting.`)
-      Deno.exit(1)
+      exit(1)
     }
 
     try {
-      await Deno.remove(plistPath)
+      await unlink(plistPath)
       console.log(`Service '${config.name}' uninstalled successfully.`)
 
       // Unload the service

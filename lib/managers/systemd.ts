@@ -5,8 +5,11 @@
  * @license   MIT
  */
 
-import { existsSync, path } from "../../deps.ts"
+import { exists } from "../utils/exists.ts"
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts"
+import { dirname, join } from "@std/path"
+import { cwd, exit, spawn } from "@cross/utils"
+import { mkdir, mkdtemp, unlink, writeFile } from "node:fs/promises"
 
 const serviceFileTemplate = `[Unit]
 Description={{name}} (Deno Service)
@@ -42,13 +45,13 @@ class SystemdService {
     const servicePathSystem = `/etc/systemd/system/${serviceFileName}`
     const servicePath = config.system ? servicePathSystem : servicePathUser
 
-    if (existsSync(servicePathUser)) {
+    if (await exists(servicePathUser)) {
       console.error(`Service '${config.name}' already exists in '${servicePathUser}'. Exiting.`)
-      Deno.exit(1)
+      exit(1)
     }
-    if (existsSync(servicePathSystem)) {
+    if (await exists(servicePathSystem)) {
       console.error(`Service '${config.name}' already exists in '${servicePathSystem}'. Exiting.`)
-      Deno.exit(1)
+      exit(1)
     }
 
     // Automatically enable linger for current user using loginctl if running in user mode
@@ -56,10 +59,8 @@ class SystemdService {
       if (!config.user) {
         throw new Error("Username not found in $USER, must be specified using the --username flag.")
       }
-      const enableLingerCommand = new Deno.Command("loginctl", { args: ["enable-linger", config.user] })
-      const enableLinger = enableLingerCommand.spawn()
-      const status = await enableLinger.status
-      if (!status.success) {
+      const enableLinger = await spawn(["loginctl", "enable-linger", config.user])
+      if (!enableLinger.code) {
         throw new Error("Failed to enable linger for user mode.")
       }
     }
@@ -73,8 +74,8 @@ class SystemdService {
       console.log(serviceFileContent)
     } else if (config.system) {
       // Store temporary file
-      const tempFilePath = await Deno.makeTempFile()
-      await Deno.writeTextFile(tempFilePath, serviceFileContent)
+      const tempFilePath = await mkdtemp("svcinstall")
+      await writeFile(join(tempFilePath, "cfg"), serviceFileContent)
 
       console.log("\Service installer do not have (and should not have) root permissions, so the next steps have to be carried out manually.")
       console.log(`\nStep 1: The systemd configuration has been saved to a temporary file, copy this file to the correct location using the following command:`)
@@ -87,40 +88,31 @@ class SystemdService {
       console.log(`\n  sudo systemctl start ${config.name}\n`)
     } else {
       // Ensure directory of servicePath exists
-      const serviceDir = path.dirname(servicePath)
-      await Deno.mkdir(serviceDir, { recursive: true })
+      const serviceDir = dirname(servicePath)
+      await mkdir(serviceDir, { recursive: true })
 
       // Write configuration
-      await Deno.writeTextFile(servicePath, serviceFileContent)
+      await writeFile(servicePath, serviceFileContent)
 
       // Run systemctl daemon-reload
-      const daemonReloadCommand = new Deno.Command("systemctl", { args: [config.system ? "" : "--user", "daemon-reload"], stderr: "piped", stdout: "piped" })
-      const daemonReload = daemonReloadCommand.spawn()
-      const daemonReloadOutput = await daemonReload.output()
-      const daemonReloadText = new TextDecoder().decode(daemonReloadOutput.stderr)
-      if (!daemonReloadOutput.success) {
+      const daemonReload = await spawn(["systemctl", config.system ? "" : "--user", "daemon-reload"])
+      if (daemonReload.code !== 0) {
         await this.rollback(servicePath, config.system)
-        throw new Error("Failed to reload daemon, rolled back any changes. Error: \n" + daemonReloadText)
+        throw new Error("Failed to reload daemon, rolled back any changes. Error: \n" + daemonReload.stderr)
       }
 
       // Run systemctl enable
-      const enableServiceCommand = new Deno.Command("systemctl", { args: [config.system ? "" : "--user", "enable", config.name], stderr: "piped", stdout: "piped" })
-      const enableService = enableServiceCommand.spawn()
-      const enableServiceOutput = await enableService.output()
-      const enableServiceText = new TextDecoder().decode(enableServiceOutput.stderr)
-      if (!enableServiceOutput.success) {
+      const enableService = await spawn(["systemctl", config.system ? "" : "--user", "enable", config.name])
+      if (enableService.code !== 0) {
         await this.rollback(servicePath, config.system)
-        throw new Error("Failed to enable service, rolled back any changes. Error: \n" + enableServiceText)
+        throw new Error("Failed to enable service, rolled back any changes. Error: \n" + enableService.stderr)
       }
 
       // Run systemctl start
-      const startServiceCommand = new Deno.Command("systemctl", { args: [config.system ? "" : "--user", "start", config.name], stderr: "piped", stdout: "piped" })
-      const startService = startServiceCommand.spawn()
-      const startServiceOutput = await startService.output()
-      const startServiceText = new TextDecoder().decode(startServiceOutput.stderr)
-      if (!startServiceOutput.success) {
+      const startServiceCommand = await spawn(["systemctl", config.system ? "" : "--user", "start", config.name])
+      if (startServiceCommand.code !== 0) {
         await this.rollback(servicePath, config.system)
-        throw new Error("Failed to start service, rolled back any changes. Error: \n" + startServiceText)
+        throw new Error("Failed to start service, rolled back any changes. Error: \n" + startServiceCommand.stdout)
       }
 
       console.log(`Service '${config.name}' installed at '${servicePath}' and enabled.`)
@@ -144,13 +136,13 @@ class SystemdService {
     const servicePath = config.system ? servicePathSystem : servicePathUser
 
     // Check if the service exists
-    if (!existsSync(servicePath)) {
+    if (!await exists(servicePath)) {
       console.error(`Service '${config.name}' does not exist. Exiting.`)
-      Deno.exit(1)
+      exit(1)
     }
 
     try {
-      await Deno.remove(servicePath)
+      await unlink(servicePath)
       console.log(`Service '${config.name}' uninstalled successfully.`)
 
       if (config.system) {
@@ -175,7 +167,7 @@ class SystemdService {
     const denoPath = Deno.execPath()
     const defaultPath = `PATH=${denoPath}:${options.home}/.deno/bin`
     const envPath = options.path ? `${defaultPath}:${options.path.join(":")}` : defaultPath
-    const workingDirectory = options.cwd ? options.cwd : Deno.cwd()
+    const workingDirectory = options.cwd ? options.cwd : cwd()
 
     let serviceFileContent = serviceFileTemplate.replace("{{name}}", options.name)
     serviceFileContent = serviceFileContent.replace("{{command}}", options.cmd)
@@ -214,12 +206,10 @@ class SystemdService {
    */
   private async rollback(servicePath: string, system: boolean) {
     try {
-      await Deno.remove(servicePath)
+      await unlink(servicePath)
 
-      const daemonReloadCommand = new Deno.Command("systemctl", { args: [system ? "" : "--user", "daemon-reload"] })
-      const daemonReload = daemonReloadCommand.spawn()
-      const daemonStatus = await daemonReload.status
-      if (!daemonStatus.success) {
+      const daemonReload = await spawn(["systemctl", system ? "" : "--user", "daemon-reload"])
+      if (daemonReload.code !== 0) {
         throw new Error("Failed to reload daemon while rolling back.")
       }
       console.log(`Changes rolled back: Removed '${servicePath}'.`)

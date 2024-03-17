@@ -1,8 +1,9 @@
 import { SystemdService } from "../../lib/managers/systemd.ts"
 import { InstallServiceOptions } from "../../lib/service.ts"
 import { assertStringIncludes } from "../deps.ts"
+import { test } from "@cross/test"
 
-Deno.test("generateConfig should create a valid service configuration", () => {
+test("generateConfig should create a valid service configuration", () => {
   const options: InstallServiceOptions = {
     name: "test-service",
     cmd: "deno run --allow-net server.ts",
@@ -22,7 +23,7 @@ Deno.test("generateConfig should create a valid service configuration", () => {
   assertStringIncludes(generatedConfig, "/usr/local/bin")
 })
 
-Deno.test("install should create and display service configuration in user mode (dry-run)", async () => {
+test("install should create and display service configuration in user mode (dry-run)", async () => {
   const options: InstallServiceOptions = {
     name: "test-service",
     cmd: "deno run --allow-net server.ts",
@@ -55,7 +56,7 @@ Deno.test("install should create and display service configuration in user mode 
   assertStringIncludes(consoleOutput.join("\n"), 'ExecStart=/bin/sh -c "deno run --allow-net server.ts"')
 })
 
-Deno.test("generateConfig should contain multi-user.target in system mode", () => {
+test("generateConfig should contain multi-user.target in system mode", () => {
   const options: InstallServiceOptions = {
     name: "test-service",
     cmd: "deno run --allow-net server.ts",

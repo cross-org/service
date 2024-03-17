@@ -5,8 +5,12 @@
  * @license   MIT
  */
 
-import { existsSync } from "../../deps.ts"
+import { exists } from "../utils/exists.ts"
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts"
+import { getEnv } from "@cross/env"
+import { exit } from "@cross/utils"
+import { mkdtemp, unlink, writeFile } from "node:fs/promises"
+import { join } from "@std/path"
 
 const upstartFileTemplate = `# {{name}} (Deno Service)
 
@@ -36,7 +40,7 @@ class UpstartService {
    */
   generateConfig(config: InstallServiceOptions): string {
     const denoPath = Deno.execPath()
-    const defaultPath = `${denoPath}:${Deno.env.get("HOME")}/.deno/bin`
+    const defaultPath = `${denoPath}:${getEnv("HOME")}/.deno/bin`
     const envPath = config.path ? `${defaultPath}:${config.path.join(":")}` : defaultPath
 
     let upstartFileContent = upstartFileTemplate.replace(
@@ -72,11 +76,11 @@ class UpstartService {
   async install(config: InstallServiceOptions, onlyGenerate: boolean) {
     const upstartFilePath = `/etc/init/${config.name}.conf`
 
-    if (existsSync(upstartFilePath)) {
+    if (await exists(upstartFilePath)) {
       console.error(
         `Service '${config.name}' already exists in '${upstartFilePath}'. Exiting.`,
       )
-      Deno.exit(1)
+      exit(1)
     }
 
     const upstartFileContent = this.generateConfig(config)
@@ -90,8 +94,9 @@ class UpstartService {
       console.log(upstartFileContent)
     } else {
       // Store temporary file
-      const tempFilePath = await Deno.makeTempFile()
-      await Deno.writeTextFile(tempFilePath, upstartFileContent)
+      const tempFileDir = await mkdtemp("svc-installer")
+      const tempFilePath = join(tempFileDir, "svc-upstart")
+      await writeFile(tempFilePath, upstartFileContent)
 
       console.log(
         "\Service installer do not have (and should not have) root permissions, so the next steps have to be carried out manually.",
@@ -113,13 +118,13 @@ class UpstartService {
     const upstartFilePath = `/etc/init/${config.name}.conf`
 
     // Check if the service exists
-    if (!existsSync(upstartFilePath)) {
+    if (!await exists(upstartFilePath)) {
       console.error(`Service '${config.name}' does not exist. Exiting.`)
-      Deno.exit(1)
+      exit(1)
     }
 
     try {
-      await Deno.remove(upstartFilePath)
+      await unlink(upstartFilePath)
       console.log(`Service '${config.name}' uninstalled successfully.`)
 
       console.log(

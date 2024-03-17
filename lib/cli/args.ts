@@ -5,7 +5,7 @@
  * @license   MIT
  */
 
-import { ArgsParser } from "@cross/utils/args";
+import { ArgsParser } from "@cross/utils/args"
 
 /**
  * Parses command line arguments and returns a parsed object.
@@ -14,7 +14,7 @@ import { ArgsParser } from "@cross/utils/args";
  * @returns - A parsed object containing the command line arguments.
  */
 function parseArguments(args: string[]): ArgsParser {
-  return new ArgsParser(args);
+  return new ArgsParser(args)
 }
 
 /**
@@ -25,7 +25,7 @@ function parseArguments(args: string[]): ArgsParser {
  */
 function checkArguments(args: ArgsParser): ArgsParser {
   // Check if the base argument is undefined or valid
-  const baseArgument = args.countLoose() > 0 ? args.getLoose()[0] : undefined;
+  const baseArgument = args.countLoose() > 0 ? args.getLoose()[0] : undefined
   const validBaseArguments = ["install", "uninstall", "generate"]
   if (baseArgument !== undefined && (typeof baseArgument !== "string" || !validBaseArguments.includes(baseArgument))) {
     throw new Error(`Invalid base argument: ${baseArgument}`)
@@ -46,10 +46,10 @@ function checkArguments(args: ArgsParser): ArgsParser {
     }
   }
 
-    // Check that name is set
-    if (!args.count("name")) {
-        throw new Error("Service name must be specified.")
-    }
+  // Check that name is set
+  if (!args.count("name")) {
+    throw new Error("Service name must be specified.")
+  }
 
   return args
 }

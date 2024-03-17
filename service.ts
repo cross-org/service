@@ -6,5 +6,6 @@
  */
 
 import { main } from "./lib/cli/main.ts"
+import { args } from "@cross/utils"
 
-main(Deno.args)
+main(args())

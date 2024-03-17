@@ -3,10 +3,10 @@ import { InitService } from "./managers/init.ts"
 import { UpstartService } from "./managers/upstart.ts"
 import { LaunchdService } from "./managers/launchd.ts"
 import { WindowsService } from "./managers/windows.ts"
-import { CurrentOS, OperatingSystem } from "@cross/runtime";
-import { getEnv } from "@cross/env";
-import { cwd, spawn } from "@cross/utils";
-import { stat } from "node:fs/promises";
+import { CurrentOS, OperatingSystem } from "@cross/runtime"
+import { getEnv } from "@cross/env"
+import { cwd, spawn } from "@cross/utils"
+import { stat } from "node:fs/promises"
 
 /**
  * Exports helper functions to install any command as a system service
@@ -174,15 +174,15 @@ async function detectInitSystem(): Promise<string> {
     return "windows"
   }
 
-  const process = await spawn(["ps","-p", "1", "-o", "comm="]);
+  const process = await spawn(["ps", "-p", "1", "-o", "comm="])
 
   if (process.stdout.includes("systemd")) {
     return "systemd"
   } else if (process.stdout.includes("init")) {
     // Check for Upstart
     try {
-      const statInitCtl = await stat("/sbin/initctl");
-      const statInit = await stat("/etc/init");
+      const statInitCtl = await stat("/sbin/initctl")
+      const statInit = await stat("/etc/init")
       if (statInitCtl.isFile() && statInit.isDirectory()) {
         return "upstart"
       } else {

@@ -5,8 +5,10 @@
  * @license   MIT
  */
 
-import { existsSync } from "../../deps.ts"
+import { exists } from "../utils/exists.ts"
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts"
+import { mkdir, unlink, writeFile } from "node:fs/promises"
+import { cwd, exit, spawn } from "@cross/utils"
 
 class WindowsService {
   constructor() {}
@@ -22,11 +24,11 @@ class WindowsService {
     const batchFileName = `${config.name}.bat`
     const serviceBatchPath = `${config.home}/.service/${batchFileName}`
 
-    if (existsSync(serviceBatchPath)) {
+    if (await exists(serviceBatchPath)) {
       console.error(
         `Service '${config.name}' already exists in '${serviceBatchPath}'. Exiting.`,
       )
-      Deno.exit(1)
+      exit(1)
     }
 
     const batchFileContent = this.generateConfig(config)
@@ -39,18 +41,19 @@ class WindowsService {
     } else {
       // Ensure that the service directory exists
       const serviceDirectory = `${config.home}/.service/`
-      if (!existsSync(serviceDirectory)) {
-        await Deno.mkdir(serviceDirectory, { recursive: true })
+      if (!await exists(serviceDirectory)) {
+        await mkdir(serviceDirectory, { recursive: true })
       }
 
       // Write configuration
-      await Deno.writeTextFile(serviceBatchPath, batchFileContent)
+      await writeFile(serviceBatchPath, batchFileContent)
 
       // Install the service
       // - Arguments to sc.exe while creating the service
       const scArgs = `create ${config.name} binPath="cmd.exe /C ${serviceBatchPath}" start= auto DisplayName= "${config.name}" obj= LocalSystem`
       // - Arguments to powershell.exe while escalating sc.exe though powershell Start-Process -Verb RunAs
-      const psArgs = [
+      const psAndArgs = [
+        "powershell.exe",
         "-Command",
         "Start-Process",
         "sc.exe",
@@ -59,18 +62,10 @@ class WindowsService {
         "-Verb",
         "RunAs",
       ]
-      const installServiceCommand = new Deno.Command("powershell.exe", {
-        args: psArgs,
-        stderr: "piped",
-        stdout: "piped",
-      })
-      const installService = installServiceCommand.spawn()
-      installService.ref()
-      const installServiceOutput = await installService.output()
-      const installServiceText = new TextDecoder().decode(installServiceOutput.stderr)
-      if (!installServiceOutput.success) {
+      const installService = await spawn(psAndArgs)
+      if (installService.code !== 0) {
         await this.rollback(serviceBatchPath)
-        throw new Error("Failed to install service. Error: \n" + installServiceText)
+        throw new Error("Failed to install service. Error: \n" + installService.stdout + installService.stderr)
       }
 
       console.log(`Service '${config.name}' installed at '${serviceBatchPath}' and enabled.`)
@@ -91,9 +86,9 @@ class WindowsService {
     const serviceBatchPath = `${config.home}/.service/${batchFileName}`
 
     // Check if the service exists
-    if (!existsSync(serviceBatchPath)) {
+    if (!await exists(serviceBatchPath)) {
       console.error(`Service '${config.name}' does not exist. Exiting.`)
-      Deno.exit(1)
+      exit(1)
     }
 
     // Try to remove service
@@ -101,6 +96,7 @@ class WindowsService {
     const scArgs = `delete ${config.name}`
     // - Arguments to powershell.exe while escalating sc.exe though powershell Start-Process -Verb RunAs
     const psArgs = [
+      "powershell.exe",
       "-Command",
       "Start-Process",
       "sc.exe",
@@ -109,22 +105,13 @@ class WindowsService {
       "-Verb",
       "RunAs",
     ]
-    const uninstallServiceCommand = new Deno.Command("powershell.exe", {
-      args: psArgs,
-      stderr: "piped",
-      stdout: "piped",
-    })
-    const uninstallService = uninstallServiceCommand.spawn()
-    uninstallService.ref()
-    const uninstallServiceOutput = await uninstallService.output()
-    const uninstallServiceText = new TextDecoder().decode(uninstallServiceOutput.stderr)
-    if (!uninstallServiceOutput.success) {
+    const uninstallService = await spawn(psArgs)
+    if (uninstallService.code !== 0) {
       await this.rollback(serviceBatchPath)
-      throw new Error("Failed to uninstall service. Error: \n" + uninstallServiceText)
+      throw new Error("Failed to uninstall service. Error: \n" + uninstallService.stderr)
     }
-
     try {
-      await Deno.remove(serviceBatchPath)
+      await unlink(serviceBatchPath)
       console.log(`Service '${config.name}' uninstalled successfully.`)
     } catch (error) {
       console.error(`Failed to uninstall service: Could not remove '${serviceBatchPath}'. Error:`, error.message)
@@ -141,7 +128,7 @@ class WindowsService {
     const denoPath = Deno.execPath()
     const defaultPath = `%PATH%;${denoPath};${options.home}\\.deno\\bin`
     const envPath = options.path ? `${defaultPath};${options.path.join(";")}` : defaultPath
-    const workingDirectory = options.cwd ? options.cwd : Deno.cwd()
+    const workingDirectory = options.cwd ? options.cwd : cwd()
 
     let batchFileContent = `@echo off\n`
     batchFileContent += `cd "${workingDirectory}"\n`
@@ -168,7 +155,7 @@ class WindowsService {
     */
   private async rollback(serviceBatchPath: string) {
     try {
-      await Deno.remove(serviceBatchPath)
+      await unlink(serviceBatchPath)
       console.log(`Changes rolled back: Removed '${serviceBatchPath}'.`)
     } catch (error) {
       console.error(`Failed to rollback changes: Could not remove '${serviceBatchPath}'. Error:`, error.message)

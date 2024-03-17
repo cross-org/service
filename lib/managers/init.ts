@@ -5,8 +5,12 @@
  * @license   MIT
  */
 
-import { existsSync } from "../../deps.ts"
+import { exists } from "../utils/exists.ts"
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts"
+import { getEnv } from "@cross/env"
+import { join } from "@std/path"
+import { mkdtemp, writeFile } from "node:fs/promises"
+import { exit } from "@cross/utils"
 
 const initScriptTemplate = `#!/bin/sh
 ### BEGIN INIT INFO
@@ -67,7 +71,7 @@ class InitService {
   generateConfig(config: InstallServiceOptions): string {
     const denoPath = Deno.execPath()
     const command = config.cmd
-    const servicePath = `${config.path?.join(":")}:${denoPath}:${Deno.env.get("HOME")}/.deno/bin`
+    const servicePath = `${config.path?.join(":")}:${denoPath}:${getEnv("HOME")}/.deno/bin`
 
     let initScriptContent = initScriptTemplate.replace(/{{name}}/g, config.name)
     initScriptContent = initScriptContent.replace("{{command}}", command)
@@ -90,9 +94,9 @@ class InitService {
   async install(config: InstallServiceOptions, onlyGenerate: boolean) {
     const initScriptPath = `/etc/init.d/${config.name}`
 
-    if (existsSync(initScriptPath)) {
+    if (await exists(initScriptPath)) {
       console.error(`Service '${config.name}' already exists in '${initScriptPath}'. Exiting.`)
-      Deno.exit(1)
+      exit(1)
     }
 
     const initScriptContent = this.generateConfig(config)
@@ -104,8 +108,9 @@ class InitService {
       console.log(initScriptContent)
     } else {
       // Store temporary file
-      const tempFilePath = await Deno.makeTempFile()
-      await Deno.writeTextFile(tempFilePath, initScriptContent)
+      const tempFilePathDir = await mkdtemp("svcinstall")
+      const tempFilePath = join(tempFilePathDir, "svc-init")
+      await writeFile(tempFilePath, initScriptContent)
 
       console.log("\nThe service installer does not have (and should not have) root permissions, so the next steps have to be carried out manually.")
       console.log(`\nStep 1: The init script has been saved to a temporary file, copy this file to the correct location using the following command:`)
@@ -119,12 +124,12 @@ class InitService {
     }
   }
 
-  uninstall(config: UninstallServiceOptions) {
+  async uninstall(config: UninstallServiceOptions) {
     const initScriptPath = `/etc/init.d/${config.name}`
 
-    if (!existsSync(initScriptPath)) {
+    if (!await exists(initScriptPath)) {
       console.error(`Service '${config.name}' does not exist in '${initScriptPath}'. Exiting.`)
-      Deno.exit(1)
+      exit(1)
     }
 
     console.log("The uninstaller does not have (and should not have) root permissions, so the next steps have to be carried out manually.")

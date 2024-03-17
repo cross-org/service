@@ -6,7 +6,7 @@
  * @license   MIT
  */
 
-import metadata from "../../deno.json" with { type: "json" };
+import metadata from "../../deno.json" with { type: "json" }
 
 export function printHeader() {
   console.log(metadata.name + " " + metadata.version)

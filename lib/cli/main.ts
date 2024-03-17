@@ -9,7 +9,7 @@
 import { printFlags, printUsage } from "./output.ts"
 import { checkArguments, parseArguments } from "./args.ts"
 import { installService, uninstallService } from "../service.ts"
-import { exit } from "@cross/utils";
+import { exit } from "@cross/utils"
 
 /**
  * Define the main entry point of the CLI application
@@ -24,7 +24,8 @@ async function main(inputArgs: string[]) {
     args = checkArguments(parseArguments(inputArgs))
   } catch (e) {
     console.error(e.message)
-    Deno.exit(1)
+    exit(1)
+    return
   }
 
   // Extract base argument
@@ -34,7 +35,7 @@ async function main(inputArgs: string[]) {
     printUsage()
     console.log("")
     printFlags()
-    Deno.exit(0)
+    exit(0)
   }
 
   // Handle arguments
@@ -54,10 +55,10 @@ async function main(inputArgs: string[]) {
   if (baseArgument === "install" || baseArgument === "generate") {
     try {
       await installService({ system, name, cmd, cwd, user, home, path, env }, baseArgument === "generate", force)
-      Deno.exit(0)
+      exit(0)
     } catch (e) {
       console.error(`Could not install service, error: ${e.message}`)
-      Deno.exit(1)
+      exit(1)
     }
     /**
      * Handle the uninstall argument
