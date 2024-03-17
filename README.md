@@ -15,10 +15,11 @@ Service is a JavaScript/TypeScript module for managing system services. It offer
 To use Service as a CLI program, you can install or upgrade it using Deno:
 
 ```sh
-deno install -frA --name service jsr:@cross/service/install@1.0.0-rc.1
+deno install -frA --name cross-service jsr:@cross/service@1.0.0-rc.1/install
 ```
 
-For library usage, install according to the instructions at [jsr.io/@cross/service](https://jsr.io/@cross/service) and simply import the `installService()` function from the `mod.ts` file:
+For library usage in Node, Deno or Bun - install according to the instructions at [jsr.io/@cross/service](https://jsr.io/@cross/service) and simply import the `installService()` function from the
+`mod.ts` file:
 
 ```ts
 import { installService } from "@cross/service";
@@ -33,23 +34,23 @@ Install a command as a service:
 ```sh
 # Using deno
 
-service install --name my-service --cmd "deno run --allow-net /full/path/to/server.ts"
+cross-service install --name my-service --cmd "deno run --allow-net /full/path/to/server.ts"
 
 # ... or a generic executable (with arguments and extra paths)
 
-service install --name my-service --cmd "/full/path/to/executable --optional-arg /full/path/to/config.ext" --path "/add/this/to/path:/and/this"
+cross-service install --name my-service --cmd "/full/path/to/executable --optional-arg /full/path/to/config.ext" --path "/add/this/to/path:/and/this"
 ```
 
 Uninstall a service:
 
 ```sh
-service uninstall --name my-service
+cross-service uninstall --name my-service
 ```
 
 Generate a service configuration file without installing it:
 
 ```sh
-service generate --name my-service --cmd "deno run --allow-net /full/path/to/server.ts --arg /full/path/to/config.ext"
+cross-service generate --name my-service --cmd "deno run --allow-net /full/path/to/server.ts --arg /full/path/to/config.ext"
 ```
 
 Note:
