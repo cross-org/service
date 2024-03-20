@@ -8,9 +8,10 @@
 import { exists } from "../utils/exists.ts";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { dirname, join } from "@std/path";
-import { cwd, exit, spawn } from "@cross/utils";
+import { cwd, spawn } from "@cross/utils";
 import { mkdir, mkdtemp, unlink, writeFile } from "node:fs/promises";
 import { getEnv } from "@cross/env";
+import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 
 const serviceFileTemplate = `[Unit]
 Description={{name}} (Deno Service)
@@ -37,9 +38,9 @@ class SystemdService {
    *
    * @async
    * @function install
-   * @param {InstallServiceOptions} options - Options for the installService function.
+   * @param options - Options for the installService function.
    */
-  async install(config: InstallServiceOptions, onlyGenerate: boolean) {
+  async install(config: InstallServiceOptions, onlyGenerate: boolean): Promise<ServiceInstallResult> {
     const serviceFileName = `${config.name}.service`;
 
     const servicePathUser = `${config.home}/.config/systemd/user/${serviceFileName}`;
@@ -47,21 +48,19 @@ class SystemdService {
     const servicePath = config.system ? servicePathSystem : servicePathUser;
 
     if (await exists(servicePathUser)) {
-      console.error(`Service '${config.name}' already exists in '${servicePathUser}'. Exiting.`);
-      exit(1);
+      throw new Error(`Service '${config.name}' already exists in '${servicePathUser}'.`);
     }
     if (await exists(servicePathSystem)) {
-      console.error(`Service '${config.name}' already exists in '${servicePathSystem}'. Exiting.`);
-      exit(1);
+      throw new Error(`Service '${config.name}' already exists in '${servicePathSystem}'.`);
     }
 
     // Automatically enable linger for current user using loginctl if running in user mode
     if (!config.system && !onlyGenerate) {
       if (!config.user) {
-        throw new Error("Username not found in $USER, must be specified using the --username flag.");
+        throw new Error("Username not found in $USER, must be specified using the --username flag or via the username option.");
       }
       const enableLinger = await spawn(["loginctl", "enable-linger", config.user]);
-      if (!enableLinger.code) {
+      if (enableLinger.code !== 0) {
         throw new Error("Failed to enable linger for user mode.");
       }
     }
@@ -69,24 +68,30 @@ class SystemdService {
     const serviceFileContent = this.generateConfig(config);
 
     if (onlyGenerate) {
-      console.log("\nThis is a dry-run, nothing will be written to disk or installed.");
-      console.log("\nPath: ", servicePath);
-      console.log("\nConfiguration:\n");
-      console.log(serviceFileContent);
+      return {
+        servicePath: null,
+        serviceFileContent,
+        manualSteps: null,
+      };
     } else if (config.system) {
       // Store temporary file
       const tempFilePath = await mkdtemp("svcinstall");
       await writeFile(join(tempFilePath, "cfg"), serviceFileContent);
-
-      console.log("\Service installer do not have (and should not have) root permissions, so the next steps have to be carried out manually.");
-      console.log(`\nStep 1: The systemd configuration has been saved to a temporary file, copy this file to the correct location using the following command:`);
-      console.log(`\n  sudo cp ${tempFilePath} ${servicePath}`);
-      console.log(`\nStep 2: Reload systemd configuration`);
-      console.log(`\n  sudo systemctl daemon-reload`);
-      console.log(`\nStep 3: Enable the service`);
-      console.log(`\n  sudo systemctl enable ${config.name}`);
-      console.log(`\nStep 4: Start the service now`);
-      console.log(`\n  sudo systemctl start ${config.name}\n`);
+      let manualSteps = "";
+      manualSteps += "\Service installer do not have (and should not have) root permissions, so the next steps have to be carried out manually.";
+      manualSteps += `\nStep 1: The systemd configuration has been saved to a temporary file, copy this file to the correct location using the following command:`;
+      manualSteps += `\n  sudo cp ${tempFilePath} ${servicePath}`;
+      manualSteps += `\nStep 2: Reload systemd configuration`;
+      manualSteps += `\n  sudo systemctl daemon-reload`;
+      manualSteps += `\nStep 3: Enable the service`;
+      manualSteps += `\n  sudo systemctl enable ${config.name}`;
+      manualSteps += `\nStep 4: Start the service now`;
+      manualSteps += `\n  sudo systemctl start ${config.name}\n`;
+      return {
+        servicePath: tempFilePath,
+        serviceFileContent,
+        manualSteps: manualSteps,
+      };
     } else {
       // Ensure directory of servicePath exists
       const serviceDir = dirname(servicePath);
@@ -115,8 +120,11 @@ class SystemdService {
         await this.rollback(servicePath, config.system);
         throw new Error("Failed to start service, rolled back any changes. Error: \n" + startServiceCommand.stdout);
       }
-
-      console.log(`Service '${config.name}' installed at '${servicePath}' and enabled.`);
+      return {
+        servicePath,
+        serviceFileContent,
+        manualSteps: null,
+      };
     }
   }
   /**
@@ -125,10 +133,10 @@ class SystemdService {
    *
    * @async
    * @function uninstallService
-   * @param {UninstallServiceOptions} config - Options for the uninstallService function.
+   * @param config - Options for the uninstallService function.
    * @throws Will throw an error if unable to remove the service file.
    */
-  async uninstall(config: UninstallServiceOptions) {
+  async uninstall(config: UninstallServiceOptions): Promise<ServiceUninstallResult> {
     const serviceFileName = `${config.name}.service`;
 
     // Different paths for user and system mode
@@ -138,23 +146,24 @@ class SystemdService {
 
     // Check if the service exists
     if (!await exists(servicePath)) {
-      console.error(`Service '${config.name}' does not exist. Exiting.`);
-      exit(1);
+      throw new Error(`Service '${config.name}' does not exist. Exiting.`);
     }
 
     try {
       await unlink(servicePath);
-      console.log(`Service '${config.name}' uninstalled successfully.`);
-
       if (config.system) {
-        console.log("Please run the following command as root to reload the systemctl daemon:");
-        console.log(`sudo systemctl daemon-reload`);
+        return {
+          servicePath,
+          manualSteps: "Please run the following command as root to reload the systemctl daemon:\nsudo systemctl daemon-reload",
+        };
       } else {
-        console.log("Please run the following command to reload the systemctl daemon:");
-        console.log(`systemctl --user daemon-reload`);
+        return {
+          servicePath,
+          manualSteps: "Please run the following command as root to reload the systemctl daemon:\nsudo systemctl --user daemon-reload",
+        };
       }
     } catch (error) {
-      console.error(`Failed to uninstall service: Could not remove '${servicePath}'. Error:`, error.message);
+      throw new Error(`Failed to uninstall service: Could not remove '${servicePath}'. Error:`, error.message);
     }
   }
 

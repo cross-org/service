@@ -10,6 +10,7 @@ import { dirname } from "@std/path";
 import { cwd, exit } from "@cross/utils";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { getEnv } from "@cross/env";
+import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 
 const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

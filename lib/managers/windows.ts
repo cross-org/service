@@ -9,6 +9,7 @@ import { exists } from "../utils/exists.ts";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { cwd, exit, spawn } from "@cross/utils";
+import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 
 class WindowsService {
   constructor() {}

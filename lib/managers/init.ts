@@ -10,7 +10,7 @@ import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { getEnv } from "@cross/env";
 import { join } from "@std/path";
 import { mkdtemp, writeFile } from "node:fs/promises";
-import { exit } from "@cross/utils";
+import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 
 const initScriptTemplate = `#!/bin/sh
 ### BEGIN INIT INFO
@@ -90,54 +90,64 @@ class InitService {
     return initScriptContent;
   }
 
-  async install(config: InstallServiceOptions, onlyGenerate: boolean) {
+  async install(config: InstallServiceOptions, onlyGenerate: boolean): Promise<ServiceInstallResult> {
     const initScriptPath = `/etc/init.d/${config.name}`;
 
     if (await exists(initScriptPath)) {
-      console.error(`Service '${config.name}' already exists in '${initScriptPath}'. Exiting.`);
-      exit(1);
+      throw new Error(`Service '${config.name}' already exists in '${initScriptPath}'. Exiting.`);
     }
 
     const initScriptContent = this.generateConfig(config);
 
     if (onlyGenerate) {
-      console.log("\nThis is a dry-run, nothing will be written to disk or installed.");
-      console.log("\nPath: ", initScriptPath);
-      console.log("\nConfiguration:\n");
-      console.log(initScriptContent);
+      return {
+        servicePath: null,
+        serviceFileContent: initScriptContent,
+        manualSteps: null,
+      };
     } else {
       // Store temporary file
       const tempFilePathDir = await mkdtemp("svcinstall");
       const tempFilePath = join(tempFilePathDir, "svc-init");
       await writeFile(tempFilePath, initScriptContent);
-
-      console.log("\nThe service installer does not have (and should not have) root permissions, so the next steps have to be carried out manually.");
-      console.log(`\nStep 1: The init script has been saved to a temporary file, copy this file to the correct location using the following command:`);
-      console.log(`\n  sudo cp ${tempFilePath} ${initScriptPath}`);
-      console.log(`\nStep 2: Make the script executable:`);
-      console.log(`\n  sudo chmod +x ${initScriptPath}`);
-      console.log(`\nStep 3: Enable the service to start at boot:`);
-      console.log(`\n  sudo update-rc.d ${config.name} defaults`);
-      console.log(`\nStep 4: Start the service now`);
-      console.log(`\n  sudo service ${config.name} start`);
+      let manualSteps = "";
+      manualSteps += "\nThe service installer does not have (and should not have) root permissions, so the next steps have to be carried out manually.";
+      manualSteps += `\nStep 1: The init script has been saved to a temporary file, copy this file to the correct location using the following command:`;
+      manualSteps += `\n  sudo cp ${tempFilePath} ${initScriptPath}`;
+      manualSteps += `\nStep 2: Make the script executable:`;
+      manualSteps += `\n  sudo chmod +x ${initScriptPath}`;
+      manualSteps += `\nStep 3: Enable the service to start at boot:`;
+      manualSteps += `\n  sudo update-rc.d ${config.name} defaults`;
+      manualSteps += `\nStep 4: Start the service now`;
+      manualSteps += `\n  sudo service ${config.name} start`;
+      return {
+        servicePath: tempFilePath,
+        serviceFileContent: initScriptContent,
+        manualSteps: manualSteps,
+      };
     }
   }
 
-  async uninstall(config: UninstallServiceOptions) {
+  async uninstall(config: UninstallServiceOptions): Promise<ServiceUninstallResult> {
     const initScriptPath = `/etc/init.d/${config.name}`;
 
     if (!await exists(initScriptPath)) {
-      console.error(`Service '${config.name}' does not exist in '${initScriptPath}'. Exiting.`);
-      exit(1);
+      throw new Error(`Service '${config.name}' does not exist in '${initScriptPath}'. Exiting.`);
     }
 
-    console.log("The uninstaller does not have (and should not have) root permissions, so the next steps have to be carried out manually.");
-    console.log(`\nStep 1: Stop the service (if it's running):`);
-    console.log(`\n  sudo service ${config.name} stop`);
-    console.log(`\nStep 2: Disable the service from starting at boot:`);
-    console.log(`\n  sudo update-rc.d -f ${config.name} remove`);
-    console.log(`\nStep 3: Remove the init script:`);
-    console.log(`\n  sudo rm ${initScriptPath}`);
+    let manualSteps = "";
+    manualSteps += "The uninstaller does not have (and should not have) root permissions, so the next steps have to be carried out manually.";
+    manualSteps += `\nStep 1: Stop the service (if it's running):`;
+    manualSteps += `\n  sudo service ${config.name} stop`;
+    manualSteps += `\nStep 2: Disable the service from starting at boot:`;
+    manualSteps += `\n  sudo update-rc.d -f ${config.name} remove`;
+    manualSteps += `\nStep 3: Remove the init script:`;
+    manualSteps += `\n  sudo rm ${initScriptPath}`;
+
+    return {
+      servicePath: initScriptPath,
+      manualSteps: "Please run the following command as root to reload the systemctl daemon:\nsudo systemctl --user daemon-reload",
+    };
   }
 }
 

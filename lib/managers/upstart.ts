@@ -11,6 +11,7 @@ import { getEnv } from "@cross/env";
 import { exit } from "@cross/utils";
 import { mkdtemp, unlink, writeFile } from "node:fs/promises";
 import { join } from "@std/path";
+import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 
 const upstartFileTemplate = `# {{name}} (Deno Service)
 
