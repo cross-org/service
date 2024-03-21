@@ -123,7 +123,7 @@ class InitService {
       return {
         servicePath: tempFilePath,
         serviceFileContent: initScriptContent,
-        manualSteps: manualSteps,
+        manualSteps,
       };
     }
   }
@@ -146,7 +146,7 @@ class InitService {
 
     return {
       servicePath: initScriptPath,
-      manualSteps: "Please run the following command as root to reload the systemctl daemon:\nsudo systemctl --user daemon-reload",
+      manualSteps,
     };
   }
 }
