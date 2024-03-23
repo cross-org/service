@@ -2,6 +2,8 @@
 
 Service is a JavaScript/TypeScript module for managing system services. It offers a convenient way to install, uninstall, and generate service configurations for various service managers.
 
+Part of the @cross suite - check out our growing collection of cross-runtime tools at [github.com/cross-org](https://github.com/cross-org).
+
 ## Features
 
 - Easy-to-use CLI for managing services
