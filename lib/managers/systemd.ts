@@ -146,7 +146,7 @@ class SystemdService {
 
     // Check if the service exists
     if (!await exists(servicePath)) {
-      throw new Error(`Service '${config.name}' does not exist. Exiting.`);
+      throw new Error(`Service '${config.name}' does not exist.`);
     }
 
     try {
@@ -163,7 +163,7 @@ class SystemdService {
         };
       }
     } catch (error) {
-      throw new Error(`Failed to uninstall service: Could not remove '${servicePath}'. Error:`, error.message);
+      throw new Error(`Failed to uninstall service: Could not remove '${servicePath}'. Error: '${error.message}'`);
     }
   }
 
@@ -216,14 +216,12 @@ class SystemdService {
   private async rollback(servicePath: string, system: boolean) {
     try {
       await unlink(servicePath);
-
       const daemonReload = await spawn(["systemctl", system ? "" : "--user", "daemon-reload"]);
       if (daemonReload.code !== 0) {
         throw new Error("Failed to reload daemon while rolling back.");
       }
-      console.log(`Changes rolled back: Removed '${servicePath}'.`);
     } catch (error) {
-      console.error(`Failed to rollback changes: Could not remove '${servicePath}'. Error:`, error.message);
+      throw new Error(`Failed to rollback changes: Could not remove '${servicePath}'. Error: '${error.message}'`);
     }
   }
 }

@@ -94,7 +94,7 @@ class InitService {
     const initScriptPath = `/etc/init.d/${config.name}`;
 
     if (await exists(initScriptPath)) {
-      throw new Error(`Service '${config.name}' already exists in '${initScriptPath}'. Exiting.`);
+      throw new Error(`Service '${config.name}' already exists in '${initScriptPath}'.`);
     }
 
     const initScriptContent = this.generateConfig(config);
@@ -132,7 +132,7 @@ class InitService {
     const initScriptPath = `/etc/init.d/${config.name}`;
 
     if (!await exists(initScriptPath)) {
-      throw new Error(`Service '${config.name}' does not exist in '${initScriptPath}'. Exiting.`);
+      throw new Error(`Service '${config.name}' does not exist in '${initScriptPath}'.`);
     }
 
     let manualSteps = "";

@@ -7,7 +7,7 @@
 import { exists } from "../utils/exists.ts";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { dirname } from "@std/path";
-import { cwd, exit } from "@cross/utils";
+import { cwd } from "@cross/utils";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { getEnv } from "@cross/env";
 import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
@@ -81,7 +81,7 @@ class LaunchdService {
 
     // Do not allow to overwrite existing services, regardless of mode
     if (await exists(plistPathUser) || await exists(plistPathSystem)) {
-      throw new Error(`Service '${config.name}' already exists. Exiting.`);
+      throw new Error(`Service '${config.name}' already exists.`);
     }
 
     const plistContent = this.generateConfig(config);
@@ -126,9 +126,8 @@ class LaunchdService {
   async rollback(plistPath: string) {
     try {
       await unlink(plistPath);
-      console.log(`Changes rolled back: Removed '${plistPath}'.`);
     } catch (error) {
-      console.error(`Failed to rollback changes: Could not remove '${plistPath}'. Error: ${error.message}`);
+      throw new Error(`Failed to rollback changes: Could not remove '${plistPath}'. Error: ${error.message}`);
     }
   }
 
@@ -147,12 +146,11 @@ class LaunchdService {
 
     // Check if the service exists
     if (!await exists(plistPath)) {
-      throw new Error(`Service '${config.name}' does not exist. Exiting.`);
+      throw new Error(`Service '${config.name}' does not exist.`);
     }
 
     try {
       await unlink(plistPath);
-      console.log(`Service '${config.name}' uninstalled successfully.`);
 
       // Unload the service
       let manualSteps = "";

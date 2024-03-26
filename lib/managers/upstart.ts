@@ -8,7 +8,6 @@
 import { exists } from "../utils/exists.ts";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { getEnv } from "@cross/env";
-import { exit } from "@cross/utils";
 import { mkdtemp, unlink, writeFile } from "node:fs/promises";
 import { join } from "@std/path";
 import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
@@ -73,40 +72,37 @@ class UpstartService {
    * @param onlyGenerate - A flag indicating whether to only generate the configuration or
    * also install the service.
    */
-  async install(config: InstallServiceOptions, onlyGenerate: boolean) {
+  async install(config: InstallServiceOptions, onlyGenerate: boolean): Promise<ServiceInstallResult> {
     const upstartFilePath = `/etc/init/${config.name}.conf`;
 
     if (await exists(upstartFilePath)) {
-      console.error(
-        `Service '${config.name}' already exists in '${upstartFilePath}'. Exiting.`,
-      );
-      exit(1);
+      throw new Error(`Service '${config.name}' already exists in '${upstartFilePath}'.`);
     }
 
     const upstartFileContent = this.generateConfig(config);
 
     if (onlyGenerate) {
-      console.log(
-        "\nThis is a dry-run, nothing will be written to disk or installed.",
-      );
-      console.log("\nPath: ", upstartFilePath);
-      console.log("\nConfiguration:\n");
-      console.log(upstartFileContent);
+      return {
+        servicePath: null,
+        serviceFileContent: upstartFileContent,
+        manualSteps: null,
+      };
     } else {
       // Store temporary file
       const tempFileDir = await mkdtemp("svc-installer");
       const tempFilePath = join(tempFileDir, "svc-upstart");
       await writeFile(tempFilePath, upstartFileContent);
-
-      console.log(
-        "\Service installer do not have (and should not have) root permissions, so the next steps have to be carried out manually.",
-      );
-      console.log(
-        `\nStep 1: The upstart configuration has been saved to a temporary file, copy this file to the correct location using the following command:`,
-      );
-      console.log(`\n  sudo cp ${tempFilePath} ${upstartFilePath}`);
-      console.log(`\nStep 2: Start the service now`);
-      console.log(`\n  sudo start ${config.name}\n`);
+      let manualSteps = "";
+      manualSteps += "\Service installer do not have (and should not have) root permissions, so the next steps have to be carried out manually.";
+      manualSteps += `\nStep 1: The upstart configuration has been saved to a temporary file, copy this file to the correct location using the following command:`;
+      manualSteps += `\n  sudo cp ${tempFilePath} ${upstartFilePath}`;
+      manualSteps += `\nStep 2: Start the service now`;
+      manualSteps += `\n  sudo start ${config.name}\n`;
+      return {
+        servicePath: tempFilePath,
+        serviceFileContent: upstartFileContent,
+        manualSteps: manualSteps,
+      };
     }
   }
 
@@ -114,27 +110,23 @@ class UpstartService {
    * Uninstalls the service based on the given options.
    * @param config - The configuration options for uninstalling the service.
    */
-  async uninstall(config: UninstallServiceOptions) {
+  async uninstall(config: UninstallServiceOptions): Promise<ServiceUninstallResult> {
     const upstartFilePath = `/etc/init/${config.name}.conf`;
 
     // Check if the service exists
     if (!await exists(upstartFilePath)) {
-      console.error(`Service '${config.name}' does not exist. Exiting.`);
-      exit(1);
+      throw new Error(`Service '${config.name}' does not exist.`);
     }
 
     try {
       await unlink(upstartFilePath);
-      console.log(`Service '${config.name}' uninstalled successfully.`);
-
-      console.log(
-        "Please run the following command as root to stop the service (if it's running):",
-      );
-      console.log(`sudo stop ${config.name}`);
+      return {
+        servicePath: upstartFilePath,
+        manualSteps: `Please run the following command as root to reload the systemctl daemon:\nsudo systemctl daemon-reload\nsudo stop ${config.name}`,
+      };
     } catch (error) {
-      console.error(
-        `Failed to uninstall service: Could not remove '${upstartFilePath}'. Error:`,
-        error.message,
+      throw new Error(
+        `Failed to uninstall service: Could not remove '${upstartFilePath}'. Error: '${error.message}`,
       );
     }
   }

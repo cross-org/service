@@ -1,7 +1,8 @@
 import { SystemdService } from "../../lib/managers/systemd.ts";
 import { InstallServiceOptions } from "../../lib/service.ts";
-import { assertStringIncludes } from "@std/assert";
+import { assertEquals, assertStringIncludes } from "@std/assert";
 import { test } from "@cross/test";
+import { ServiceInstallResult } from "../../lib/result.ts";
 
 test("generateConfig should create a valid service configuration", () => {
   const options: InstallServiceOptions = {
@@ -32,27 +33,19 @@ test("install should create and display service configuration in user mode (dry-
   };
   const systemdService = new SystemdService();
 
-  // Capture console output
-  const consoleOutput: string[] = [];
-  const originalConsoleLog = console.log;
-  console.log = (...args: unknown[]): void => {
-    consoleOutput.push(args.join(" "));
-  };
-
+  let installResult: ServiceInstallResult | undefined;
   try {
-    await systemdService.install(options, true);
+    installResult = await systemdService.install(options, true);
   } catch (error) {
-    console.log = originalConsoleLog;
     throw error;
   }
 
-  console.log = originalConsoleLog;
+  assertEquals(installResult.manualSteps, null);
 
   // Assert that the console output contains expected values
-  assertStringIncludes(consoleOutput.join("\n"), "This is a dry-run, nothing will be written to disk or installed.");
-  assertStringIncludes(consoleOutput.join("\n"), "/home/testuser/.config/systemd/user/test-service.service");
-  assertStringIncludes(consoleOutput.join("\n"), "Description=test-service (Deno Service)");
-  assertStringIncludes(consoleOutput.join("\n"), 'ExecStart=/bin/sh -c "deno run --allow-net server.ts"');
+  assertStringIncludes(installResult.serviceFileContent, "/home/testuser/.config/systemd/user/test-service.service");
+  assertStringIncludes(installResult.serviceFileContent, "Description=test-service (Deno Service)");
+  assertStringIncludes(installResult.serviceFileContent, 'ExecStart=/bin/sh -c "deno run --allow-net server.ts"');
 });
 
 test("generateConfig should contain multi-user.target in system mode", () => {

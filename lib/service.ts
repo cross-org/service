@@ -114,7 +114,7 @@ class ServiceManager {
       throw new Error(`Unsupported init system: ${initSystem}`);
     }
 
-    return manager.uninstall(options);
+    return await manager.uninstall(options);
   }
 }
 
@@ -123,9 +123,9 @@ const serviceManager = new ServiceManager(); // Register available managers
 serviceManager.register("systemd", new SystemdService());
 serviceManager.register("sysvinit", new InitService());
 serviceManager.register("docker-init", new InitService());
-//serviceManager.register("upstart", new UpstartService());
-//serviceManager.register("launchd", new LaunchdService());
-//serviceManager.register("windows", new WindowsService());
+serviceManager.register("upstart", new UpstartService());
+serviceManager.register("launchd", new LaunchdService());
+serviceManager.register("windows", new WindowsService());
 
 async function installService(options: InstallServiceOptions, onlyGenerate: boolean, forceInitSystem?: string) {
   if (forceInitSystem && !onlyGenerate) {
