@@ -14,7 +14,19 @@ import { ArgsParser } from "@cross/utils/args";
  * @returns - A parsed object containing the command line arguments.
  */
 function parseArguments(args: string[]): ArgsParser {
-  return new ArgsParser(args);
+  const aliases = {
+    "help": "h",
+    "system": "s",
+    "name": "n",
+    "cwd": "w",
+    "cmd": "c",
+    "user": "u",
+    "home": "H",
+    "force": "f",
+    "path": "p",
+    "env": "e",
+  };
+  return new ArgsParser(args, { aliases });
 }
 
 /**

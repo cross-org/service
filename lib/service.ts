@@ -3,6 +3,7 @@ import { InitService } from "./managers/init.ts";
 import { UpstartService } from "./managers/upstart.ts";
 import { LaunchdService } from "./managers/launchd.ts";
 import { WindowsService } from "./managers/windows.ts";
+import { ServiceInstallResult, ServiceUninstallResult } from "./result.ts";
 import { CurrentOS, OperatingSystem } from "@cross/runtime";
 import { getEnv } from "@cross/env";
 import { cwd, spawn } from "@cross/utils";
@@ -54,8 +55,8 @@ interface UninstallServiceOptions {
 }
 
 interface ServiceManagerImplementation {
-  install(options: InstallServiceOptions, onlyGenerate: boolean): Promise<void>;
-  uninstall(options: UninstallServiceOptions): Promise<void> | void;
+  install(options: InstallServiceOptions, onlyGenerate: boolean): Promise<ServiceInstallResult>;
+  uninstall(options: UninstallServiceOptions): Promise<ServiceUninstallResult>;
   generateConfig(options: InstallServiceOptions): string;
 }
 
@@ -86,14 +87,14 @@ class ServiceManager {
     this.managers.set(initSystem, manager);
   }
 
-  async installService(initSystem: string, options: InstallServiceOptions, onlyGenerate: boolean) {
+  async installService(initSystem: string, options: InstallServiceOptions, onlyGenerate: boolean): Promise<ServiceInstallResult> {
     const manager = this.managers.get(initSystem);
 
     if (!manager) {
       throw new Error(`Unsupported init system: ${initSystem}`);
     }
 
-    await manager.install(options, onlyGenerate);
+    return await manager.install(options, onlyGenerate);
   }
 
   async generateConfig(initSystem: string, options: InstallServiceOptions): Promise<string> {
@@ -106,14 +107,14 @@ class ServiceManager {
     return await manager.generateConfig(options);
   }
 
-  async uninstallService(initSystem: string, options: UninstallServiceOptions) {
+  async uninstallService(initSystem: string, options: UninstallServiceOptions): Promise<ServiceUninstallResult> {
     const manager = this.managers.get(initSystem);
 
     if (!manager) {
       throw new Error(`Unsupported init system: ${initSystem}`);
     }
 
-    await manager.uninstall(options);
+    return await manager.uninstall(options);
   }
 }
 

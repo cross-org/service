@@ -8,7 +8,8 @@
 import { exists } from "../utils/exists.ts";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
-import { cwd, exit, spawn } from "@cross/utils";
+import { cwd, spawn } from "@cross/utils";
+import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 
 class WindowsService {
   constructor() {}
@@ -20,24 +21,22 @@ class WindowsService {
    * @function install
    * @param {InstallServiceOptions} options - Options for the installService function.
    */
-  async install(config: InstallServiceOptions, onlyGenerate: boolean) {
+  async install(config: InstallServiceOptions, onlyGenerate: boolean): Promise<ServiceInstallResult> {
     const batchFileName = `${config.name}.bat`;
     const serviceBatchPath = `${config.home}/.service/${batchFileName}`;
 
     if (await exists(serviceBatchPath)) {
-      console.error(
-        `Service '${config.name}' already exists in '${serviceBatchPath}'. Exiting.`,
-      );
-      exit(1);
+      throw new Error(`Service '${config.name}' already exists in '${serviceBatchPath}'.`);
     }
 
     const batchFileContent = this.generateConfig(config);
 
     if (onlyGenerate) {
-      console.log("\nThis is a dry-run, nothing will be written to disk or installed.");
-      console.log("\nPath: ", serviceBatchPath);
-      console.log("\nConfiguration:\n");
-      console.log(batchFileContent);
+      return {
+        servicePath: serviceBatchPath,
+        serviceFileContent: batchFileContent,
+        manualSteps: null,
+      };
     } else {
       // Ensure that the service directory exists
       const serviceDirectory = `${config.home}/.service/`;
@@ -67,8 +66,11 @@ class WindowsService {
         await this.rollback(serviceBatchPath);
         throw new Error("Failed to install service. Error: \n" + installService.stdout + installService.stderr);
       }
-
-      console.log(`Service '${config.name}' installed at '${serviceBatchPath}' and enabled.`);
+      return {
+        servicePath: serviceBatchPath,
+        serviceFileContent: batchFileContent,
+        manualSteps: null,
+      };
     }
   }
 
@@ -81,14 +83,13 @@ class WindowsService {
    * @param {UninstallServiceOptions} config - Options for the uninstallService function.
    * @throws Will throw an error if unable to remove the batch file.
    */
-  async uninstall(config: UninstallServiceOptions) {
+  async uninstall(config: UninstallServiceOptions): Promise<ServiceUninstallResult> {
     const batchFileName = `${config.name}.bat`;
     const serviceBatchPath = `${config.home}/.service/${batchFileName}`;
 
     // Check if the service exists
     if (!await exists(serviceBatchPath)) {
-      console.error(`Service '${config.name}' does not exist. Exiting.`);
-      exit(1);
+      throw new Error(`Service '${config.name}' does not exist.`);
     }
 
     // Try to remove service
@@ -112,9 +113,12 @@ class WindowsService {
     }
     try {
       await unlink(serviceBatchPath);
-      console.log(`Service '${config.name}' uninstalled successfully.`);
+      return {
+        servicePath: config.name,
+        manualSteps: null,
+      };
     } catch (error) {
-      console.error(`Failed to uninstall service: Could not remove '${serviceBatchPath}'. Error:`, error.message);
+      throw new Error(`Failed to uninstall service: Could not remove '${serviceBatchPath}'. Error: '${error.message}'`);
     }
   }
 
@@ -155,7 +159,6 @@ class WindowsService {
   private async rollback(serviceBatchPath: string) {
     try {
       await unlink(serviceBatchPath);
-      console.log(`Changes rolled back: Removed '${serviceBatchPath}'.`);
     } catch (error) {
       console.error(`Failed to rollback changes: Could not remove '${serviceBatchPath}'. Error:`, error.message);
     }

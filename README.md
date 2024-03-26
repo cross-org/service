@@ -192,8 +192,15 @@ class ManagerTemplate {
    * steps needed to finish the installation, such as `sudo systemctl daemon-reload`.
    * generateConfig do only output the base configuration file.
    */
-  async install(config: InstallServiceOptions, onlyGenerate: boolean) {
-    // TODO: Implement this method for the target init system.
+  async install(config: InstallServiceOptions, onlyGenerate: boolean): Promise<InstallServiceOptions> {
+    /*
+     * ToDo: Implement this method for the target init system.
+     *
+    return {
+      servicePath,
+      serviceFileContent,
+      manualSteps: null,
+    }; */
     throw new Error("Not implemented");
   }
 
@@ -201,8 +208,15 @@ class ManagerTemplate {
    * Uninstalls the service based on the given options.
    * @param config - The configuration options for uninstalling the service.
    */
-  async uninstall(config: UninstallServiceOptions) {
-    // TODO: Implement this method for the target init system.
+  async uninstall(config: UninstallServiceOptions): Promise<UninstallServiceOptions> {
+    /*
+     * TODO: Implement this method for the target init system.
+     *
+    return {
+      pathToServiceFile,
+      manualSteps: null,
+    };
+    */
     throw new Error("Not implemented");
   }
 }

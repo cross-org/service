@@ -17,6 +17,6 @@ test("parseArguments should correctly parse CLI arguments", () => {
   ]);
 
   assertEquals(args.getLoose()[0], "install");
-  assertEquals(args.get("help"), true);
+  assertEquals(args.getBoolean("help"), true);
   assertEquals(args.getRest(), "run --allow-net app.ts");
 });

@@ -49,7 +49,7 @@ async function main(inputArgs: string[]) {
   }
 
   // Handle arguments
-  const system = args.get("system") as boolean;
+  const system = args.getBoolean("system");
   const name = args.get("name") as string;
   const cmd = (args.get("cmd") || args.getRest()) as string;
   const cwd = args.get("cwd") as string | undefined;
