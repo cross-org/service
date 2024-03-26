@@ -43,7 +43,7 @@ test("install should create and display service configuration in user mode (dry-
   assertEquals(installResult.manualSteps, null);
 
   // Assert that the console output contains expected values
-  assertStringIncludes(installResult.serviceFileContent, "/home/testuser/.config/systemd/user/test-service.service");
+  assertStringIncludes(installResult.servicePath || "", "/home/testuser/.config/systemd/user/test-service.service");
   assertStringIncludes(installResult.serviceFileContent, "Description=test-service (Deno Service)");
   assertStringIncludes(installResult.serviceFileContent, 'ExecStart=/bin/sh -c "deno run --allow-net server.ts"');
 });

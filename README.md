@@ -191,7 +191,7 @@ class ManagerTemplate {
    * generateConfig do only output the base configuration file.
    */
   async install(config: InstallServiceOptions, onlyGenerate: boolean): Promise<InstallServiceOptions> {
-    /* 
+    /*
      * ToDo: Implement this method for the target init system.
      *
     return {
@@ -216,7 +216,6 @@ class ManagerTemplate {
     };
     */
     throw new Error("Not implemented");
-
   }
 }
 

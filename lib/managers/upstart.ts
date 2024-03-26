@@ -83,7 +83,7 @@ class UpstartService {
 
     if (onlyGenerate) {
       return {
-        servicePath: null,
+        servicePath: upstartFilePath,
         serviceFileContent: upstartFileContent,
         manualSteps: null,
       };

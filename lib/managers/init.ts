@@ -101,7 +101,7 @@ class InitService {
 
     if (onlyGenerate) {
       return {
-        servicePath: null,
+        servicePath: initScriptPath,
         serviceFileContent: initScriptContent,
         manualSteps: null,
       };

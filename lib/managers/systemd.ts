@@ -69,7 +69,7 @@ class SystemdService {
 
     if (onlyGenerate) {
       return {
-        servicePath: null,
+        servicePath,
         serviceFileContent,
         manualSteps: null,
       };

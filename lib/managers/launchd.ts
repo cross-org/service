@@ -88,7 +88,7 @@ class LaunchdService {
 
     if (onlyGenerate) {
       return {
-        servicePath: null,
+        servicePath: plistPath,
         serviceFileContent: plistContent,
         manualSteps: null,
       };
