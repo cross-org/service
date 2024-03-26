@@ -15,6 +15,9 @@
     "@std/assert": "jsr:@std/assert@^0.220.1",
     "@std/path": "jsr:@std/path@^0.220.1"
   },
+  "publish": {
+    "exclude": [".github", "*.test.ts"]
+  },
   "exports": {
     ".": "./mod.ts",
     "./install": "./service.ts"
