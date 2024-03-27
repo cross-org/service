@@ -5,11 +5,10 @@
  * @license   MIT
  */
 
-import { exists } from "../utils/exists.ts";
+import { exists, mkdir, mktempdir, unlink, writeFile } from "@cross/fs";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { dirname, join } from "@std/path";
 import { cwd, spawn } from "@cross/utils";
-import { mkdir, mkdtemp, unlink, writeFile } from "node:fs/promises";
 import { getEnv } from "@cross/env";
 import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 
@@ -75,7 +74,7 @@ class SystemdService {
       };
     } else if (config.system) {
       // Store temporary file
-      const tempFilePath = await mkdtemp("svcinstall");
+      const tempFilePath = await mktempdir("svcinstall");
       await writeFile(join(tempFilePath, "cfg"), serviceFileContent);
       let manualSteps = "";
       manualSteps += "\Service installer do not have (and should not have) root permissions, so the next steps have to be carried out manually.";

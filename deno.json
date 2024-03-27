@@ -9,6 +9,7 @@
   },
   "imports": {
     "@cross/env": "jsr:@cross/env@^1.0.0",
+    "@cross/fs": "jsr:@cross/fs@^0.0.4",
     "@cross/runtime": "jsr:@cross/runtime@^1.0.0",
     "@cross/test": "jsr:@cross/test@^0.0.9",
     "@cross/utils": "jsr:@cross/utils@^0.8.2",

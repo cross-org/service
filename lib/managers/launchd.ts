@@ -4,11 +4,10 @@
  * @file      lib/managers/launchd.ts
  * @license   MIT
  */
-import { exists } from "../utils/exists.ts";
+import { exists, mkdir, unlink, writeFile } from "@cross/fs";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { dirname } from "@std/path";
 import { cwd } from "@cross/utils";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { getEnv } from "@cross/env";
 import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 

@@ -5,10 +5,9 @@
  * @license   MIT
  */
 
-import { exists } from "../utils/exists.ts";
+import { exists, mktempdir, unlink, writeFile } from "@cross/fs";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { getEnv } from "@cross/env";
-import { mkdtemp, unlink, writeFile } from "node:fs/promises";
 import { join } from "@std/path";
 import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 
@@ -89,7 +88,7 @@ class UpstartService {
       };
     } else {
       // Store temporary file
-      const tempFileDir = await mkdtemp("svc-installer");
+      const tempFileDir = await mktempdir("svc-installer");
       const tempFilePath = join(tempFileDir, "svc-upstart");
       await writeFile(tempFilePath, upstartFileContent);
       let manualSteps = "";

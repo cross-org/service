@@ -5,11 +5,10 @@
  * @license   MIT
  */
 
-import { exists } from "../utils/exists.ts";
+import { exists, mktempdir, writeFile } from "@cross/fs";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { getEnv } from "@cross/env";
 import { join } from "@std/path";
-import { mkdtemp, writeFile } from "node:fs/promises";
 import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 
 const initScriptTemplate = `#!/bin/sh
@@ -107,7 +106,7 @@ class InitService {
       };
     } else {
       // Store temporary file
-      const tempFilePathDir = await mkdtemp("svcinstall");
+      const tempFilePathDir = await mktempdir("svcinstall");
       const tempFilePath = join(tempFilePathDir, "svc-init");
       await writeFile(tempFilePath, initScriptContent);
       let manualSteps = "";

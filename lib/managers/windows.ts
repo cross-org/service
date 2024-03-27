@@ -5,9 +5,8 @@
  * @license   MIT
  */
 
-import { exists } from "../utils/exists.ts";
+import { exists, mkdir, unlink, writeFile } from "@cross/fs";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { cwd, spawn } from "@cross/utils";
 import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 

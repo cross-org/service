@@ -12,12 +12,13 @@ jobs:
     uses: cross-org/workflows/.github/workflows/deno-ci.yml@main
     with:
       entrypoint: mod.ts
+      lint_docs: false
   bun_ci:
     uses: cross-org/workflows/.github/workflows/bun-ci.yml@main
     with:
-      jsr_dependencies: "@cross/test @std/assert @cross/runtime @cross/utils @std/path @cross/env"
+      jsr_dependencies: "@cross/test @std/assert @cross/runtime @cross/utils @std/path @cross/env @cross/fs"
   node_ci:
     uses: cross-org/workflows/.github/workflows/node-ci.yml@main
     with:
-      jsr_dependencies: "@cross/test @std/assert @cross/runtime @cross/utils @std/path @cross/env"
+      jsr_dependencies: "@cross/test @std/assert @cross/runtime @cross/utils @std/path @cross/env @cross/fs"
       test_target: "test/**/*.test.ts" # Optional
