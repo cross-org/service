@@ -28,7 +28,7 @@ class WindowsService {
       throw new Error(`Service '${config.name}' already exists in '${serviceBatchPath}'.`);
     }
 
-    const batchFileContent = this.generateConfig(config);
+    const batchFileContent = await this.generateConfig(config);
 
     if (onlyGenerate) {
       return {
@@ -127,7 +127,7 @@ class WindowsService {
    * @param {InstallServiceOptions} options - The options used to generate the batch file.
    * @returns {string} The generated batch file content as a string.
    */
-  generateConfig(options: InstallServiceOptions): string {
+  async generateConfig(options: InstallServiceOptions): Promise<string> {
     const defaultPath = `%PATH%;`;
     const envPath = options.path ? `${defaultPath};${options.path.join(";")}` : defaultPath;
     const workingDirectory = options.cwd ? options.cwd : cwd();
@@ -144,6 +144,7 @@ class WindowsService {
     }
 
     batchFileContent += `"deno run -A --allow-ffi --unstable https://deno.land/x/windows_service@1.0.11/run.ts --serviceName ${options.name} -- ${options.cmd}\n`;
+    await true;
 
     return batchFileContent;
   }

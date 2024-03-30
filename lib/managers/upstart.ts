@@ -6,8 +6,8 @@
  */
 
 import { exists, mktempdir, unlink, writeFile } from "@cross/fs";
-import { join } from "@std/path";
-import { cwd } from "@cross/utils";
+import { dirname, join } from "@std/path";
+import { cwd, resolvedExecPath } from "@cross/utils";
 import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import type { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
 
@@ -41,10 +41,10 @@ class UpstartService {
    * @param config - The configuration options for the service.
    * @returns The generated Upstart configuration file content.
    */
-  generateConfig(config: InstallServiceOptions): string {
-    const denoPath = Deno.execPath();
-    const defaultPath = `${denoPath}:${config.home}/.deno/bin`;
-    const envPath = config.path ? `${defaultPath}:${config.path.join(":")}` : defaultPath;
+  async generateConfig(config: InstallServiceOptions): Promise<string> {
+    const runtimePath = await resolvedExecPath();
+    const runtimeDir = dirname(runtimePath);
+    const envPath = config.path?.length ? `${config.path?.join(":")}:${runtimeDir}` : runtimeDir;
     const workingDirectory = config.cwd ? config.cwd : cwd();
 
     let upstartFileContent = upstartFileTemplate.replace(
@@ -88,7 +88,7 @@ class UpstartService {
       throw new Error(`Service '${config.name}' already exists in '${upstartFilePath}'.`);
     }
 
-    const upstartFileContent = this.generateConfig(config);
+    const upstartFileContent = await this.generateConfig(config);
 
     if (onlyGenerate) {
       return {

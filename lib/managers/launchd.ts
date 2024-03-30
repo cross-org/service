@@ -6,7 +6,7 @@
  */
 import { exists, mkdir, unlink, writeFile } from "@cross/fs";
 import { dirname } from "@std/path";
-import { cwd } from "@cross/utils";
+import { cwd, resolvedExecPath } from "@cross/utils";
 import type { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
 import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
@@ -38,10 +38,11 @@ class LaunchdService {
    * @param {InstallServiceOptions} options - The options used to generate the Launchd plist configuration file.
    * @returns {string} The generated Launchd plist configuration file content as a string.
    */
-  generateConfig(options: InstallServiceOptions): string {
-    const denoPath = Deno.execPath();
+  async generateConfig(options: InstallServiceOptions): Promise<string> {
+    const runtimePath = await resolvedExecPath();
+    const runtimeDir = dirname(runtimePath);
+    const servicePath = options.path?.length ? `${options.path?.join(":")}:${runtimeDir}` : runtimeDir;
     const commandArgs = options.cmd.split(" ");
-    const servicePath = `${options.path?.join(":")}:${denoPath}:${options.home}/.deno/bin`;
     const workingDirectory = options.cwd ? options.cwd : cwd();
 
     let plistContent = plistTemplate.replace(/{{name}}/g, options.name);
@@ -82,7 +83,7 @@ class LaunchdService {
       throw new Error(`Service '${config.name}' already exists.`);
     }
 
-    const plistContent = this.generateConfig(config);
+    const plistContent = await this.generateConfig(config);
 
     if (onlyGenerate) {
       return {

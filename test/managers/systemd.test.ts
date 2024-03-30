@@ -4,7 +4,7 @@ import { assertEquals, assertStringIncludes } from "@std/assert";
 import { test } from "@cross/test";
 import type { ServiceInstallResult } from "../../lib/result.ts";
 
-test("generateConfig should create a valid service configuration", () => {
+test("generateConfig should create a valid service configuration", async () => {
   const options: InstallServiceOptions = {
     name: "test-service",
     cmd: "deno run --allow-net server.ts",
@@ -14,7 +14,7 @@ test("generateConfig should create a valid service configuration", () => {
     path: ["/usr/local/bin"],
   };
   const systemdService = new SystemdService();
-  const generatedConfig = systemdService.generateConfig(options);
+  const generatedConfig = await systemdService.generateConfig(options);
 
   assertStringIncludes(generatedConfig, "Description=test-service (Deno Service)");
   assertStringIncludes(generatedConfig, 'ExecStart=/bin/sh -c "deno run --allow-net server.ts"');
@@ -48,7 +48,7 @@ test("install should create and display service configuration in user mode (dry-
   assertStringIncludes(installResult.serviceFileContent, 'ExecStart=/bin/sh -c "deno run --allow-net server.ts"');
 });
 
-test("generateConfig should contain multi-user.target in system mode", () => {
+test("generateConfig should contain multi-user.target in system mode", async () => {
   const options: InstallServiceOptions = {
     name: "test-service",
     cmd: "deno run --allow-net server.ts",
@@ -58,7 +58,7 @@ test("generateConfig should contain multi-user.target in system mode", () => {
     path: ["/usr/local/bin"],
   };
   const systemdService = new SystemdService();
-  const generatedConfig = systemdService.generateConfig(options);
+  const generatedConfig = await systemdService.generateConfig(options);
 
   assertStringIncludes(generatedConfig, "WantedBy=multi-user.target");
 });

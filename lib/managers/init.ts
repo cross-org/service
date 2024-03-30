@@ -6,6 +6,8 @@
  */
 
 import { exists, mktempdir, writeFile } from "@cross/fs";
+import { dirname } from "@std/path";
+import { resolvedExecPath } from "@cross/utils/execpath";
 import { join } from "@std/path";
 import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import type { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
@@ -66,11 +68,11 @@ class InitService {
    * @param {InstallServiceOptions} config - Options for the installService function.
    * @returns {string} - The configuration file content.
    */
-  generateConfig(config: InstallServiceOptions): string {
-    const denoPath = Deno.execPath();
+  async generateConfig(config: InstallServiceOptions): Promise<string> {
+    const runtimePath = await resolvedExecPath();
+    const runtimeDir = dirname(runtimePath);
     const command = config.cmd;
-    const servicePath = `${config.path?.join(":")}:${denoPath}:${config.home}/.deno/bin`;
-
+    const servicePath = config.path?.length ? `${config.path?.join(":")}:${runtimeDir}` : runtimeDir;
     let initScriptContent = initScriptTemplate.replace(/{{name}}/g, config.name);
     initScriptContent = initScriptContent.replace("{{command}}", command);
     initScriptContent = initScriptContent.replace("{{path}}", servicePath);
@@ -96,7 +98,7 @@ class InitService {
       throw new Error(`Service '${config.name}' already exists in '${initScriptPath}'.`);
     }
 
-    const initScriptContent = this.generateConfig(config);
+    const initScriptContent = await this.generateConfig(config);
 
     if (onlyGenerate) {
       return {

@@ -7,7 +7,7 @@
 
 import { exists, mkdir, mktempdir, unlink, writeFile } from "@cross/fs";
 import { dirname, join } from "@std/path";
-import { cwd, spawn } from "@cross/utils";
+import { cwd, resolvedExecPath, spawn } from "@cross/utils";
 import type { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
 import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 
@@ -63,7 +63,7 @@ class SystemdService {
       }
     }
 
-    const serviceFileContent = this.generateConfig(config);
+    const serviceFileContent = await this.generateConfig(config);
 
     if (onlyGenerate) {
       return {
@@ -177,10 +177,10 @@ class SystemdService {
    * @param {InstallServiceOptions} options - The options used to generate the systemd service configuration file.
    * @returns {string} The generated systemd service configuration file content as a string.
    */
-  generateConfig(options: InstallServiceOptions): string {
-    const denoPath = Deno.execPath();
-    const defaultPath = `PATH=${denoPath}:${options.home}/.deno/bin`;
-    const envPath = options.path ? `${defaultPath}:${options.path.join(":")}` : defaultPath;
+  async generateConfig(options: InstallServiceOptions): Promise<string> {
+    const runtimePath = await resolvedExecPath();
+    const runtimeDir = dirname(runtimePath);
+    const envPath = "PATH=" + (options.path?.length ? `${options.path?.join(":")}:${runtimeDir}` : runtimeDir);
     const workingDirectory = options.cwd ? options.cwd : cwd();
 
     let serviceFileContent = serviceFileTemplate.replace("{{name}}", options.name);

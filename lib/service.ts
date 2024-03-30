@@ -56,7 +56,7 @@ interface UninstallServiceOptions {
 interface ServiceManagerImplementation {
   install(options: InstallServiceOptions, onlyGenerate: boolean): Promise<ServiceInstallResult>;
   uninstall(options: UninstallServiceOptions): Promise<ServiceUninstallResult>;
-  generateConfig(options: InstallServiceOptions): string;
+  generateConfig(options: InstallServiceOptions): Promise<string>;
 }
 
 /**
