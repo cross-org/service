@@ -1,8 +1,8 @@
 import { SystemdService } from "../../lib/managers/systemd.ts";
-import { InstallServiceOptions } from "../../lib/service.ts";
+import type { InstallServiceOptions } from "../../lib/service.ts";
 import { assertEquals, assertStringIncludes } from "@std/assert";
 import { test } from "@cross/test";
-import { ServiceInstallResult } from "../../lib/result.ts";
+import type { ServiceInstallResult } from "../../lib/result.ts";
 
 test("generateConfig should create a valid service configuration", () => {
   const options: InstallServiceOptions = {

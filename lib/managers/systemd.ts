@@ -6,10 +6,10 @@
  */
 
 import { exists, mkdir, mktempdir, unlink, writeFile } from "@cross/fs";
-import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { dirname, join } from "@std/path";
 import { cwd, spawn } from "@cross/utils";
-import { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
+import type { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
+import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 
 const serviceFileTemplate = `[Unit]
 Description={{name}} (Deno Service)

@@ -6,9 +6,9 @@
  */
 
 import { exists, mkdir, unlink, writeFile } from "@cross/fs";
-import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { cwd, spawn } from "@cross/utils";
-import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
+import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
+import type { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 
 class WindowsService {
   constructor() {}

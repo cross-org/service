@@ -5,11 +5,10 @@
  * @license   MIT
  */
 import { exists, mkdir, unlink, writeFile } from "@cross/fs";
-import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { dirname } from "@std/path";
 import { cwd } from "@cross/utils";
-import { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
-
+import type { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
+import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">

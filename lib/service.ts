@@ -3,12 +3,11 @@ import { InitService } from "./managers/init.ts";
 import { UpstartService } from "./managers/upstart.ts";
 import { LaunchdService } from "./managers/launchd.ts";
 import { WindowsService } from "./managers/windows.ts";
-import { ServiceInstallResult, ServiceUninstallResult } from "./result.ts";
 import { CurrentOS, OperatingSystem } from "@cross/runtime";
 import { getEnv } from "@cross/env";
 import { cwd, spawn } from "@cross/utils";
 import { stat } from "@cross/fs";
-
+import type { ServiceInstallResult, ServiceUninstallResult } from "./result.ts";
 /**
  * Exports helper functions to install any command as a system service
  * Throws an error on Windows.
