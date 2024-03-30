@@ -7,9 +7,9 @@
 
 import { exists, mktempdir, writeFile } from "@cross/fs";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
-import { getEnv } from "@cross/env";
 import { join } from "@std/path";
 import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
+import { ServiceManualStep } from "../result.ts";
 
 const initScriptTemplate = `#!/bin/sh
 ### BEGIN INIT INFO
@@ -68,8 +68,9 @@ class InitService {
    * @returns {string} - The configuration file content.
    */
   generateConfig(config: InstallServiceOptions): string {
+    const denoPath = Deno.execPath();
     const command = config.cmd;
-    const servicePath = `${config.path?.join(":")}:${getEnv("PATH")}`;
+    const servicePath = `${config.path?.join(":")}:${denoPath}:${config.home}/.deno/bin`;
 
     let initScriptContent = initScriptTemplate.replace(/{{name}}/g, config.name);
     initScriptContent = initScriptContent.replace("{{command}}", command);
@@ -109,16 +110,26 @@ class InitService {
       const tempFilePathDir = await mktempdir("svcinstall");
       const tempFilePath = join(tempFilePathDir, "svc-init");
       await writeFile(tempFilePath, initScriptContent);
-      let manualSteps = "";
-      manualSteps += "\nThe service installer does not have (and should not have) root permissions, so the next steps have to be carried out manually.";
-      manualSteps += `\nStep 1: The init script has been saved to a temporary file, copy this file to the correct location using the following command:`;
-      manualSteps += `\n  sudo cp ${tempFilePath} ${initScriptPath}`;
-      manualSteps += `\nStep 2: Make the script executable:`;
-      manualSteps += `\n  sudo chmod +x ${initScriptPath}`;
-      manualSteps += `\nStep 3: Enable the service to start at boot:`;
-      manualSteps += `\n  sudo update-rc.d ${config.name} defaults`;
-      manualSteps += `\nStep 4: Start the service now`;
-      manualSteps += `\n  sudo service ${config.name} start`;
+      const manualSteps: ServiceManualStep[] = [];
+      manualSteps.push({
+        text: "The service installer does not have (and should not have) root permissions, so the next steps have to be carried out manually.",
+      });
+      manualSteps.push({
+        text: "Step 1: The init script has been saved to a temporary file, copy this file to the correct location using the following command:",
+        command: `sudo cp ${tempFilePath} ${initScriptPath}`,
+      });
+      manualSteps.push({
+        text: "Step 2: Make the script executable:",
+        command: `sudo chmod +x ${initScriptPath}`,
+      });
+      manualSteps.push({
+        text: "Step 3: Enable the service to start at boot:",
+        command: `sudo update-rc.d ${config.name} defaults`,
+      });
+      manualSteps.push({
+        text: "Step 4: Start the service now:",
+        command: `sudo service ${config.name} start`,
+      });
       return {
         servicePath: tempFilePath,
         serviceFileContent: initScriptContent,
@@ -134,15 +145,23 @@ class InitService {
       throw new Error(`Service '${config.name}' does not exist in '${initScriptPath}'.`);
     }
 
-    let manualSteps = "";
-    manualSteps += "The uninstaller does not have (and should not have) root permissions, so the next steps have to be carried out manually.";
-    manualSteps += `\nStep 1: Stop the service (if it's running):`;
-    manualSteps += `\n  sudo service ${config.name} stop`;
-    manualSteps += `\nStep 2: Disable the service from starting at boot:`;
-    manualSteps += `\n  sudo update-rc.d -f ${config.name} remove`;
-    manualSteps += `\nStep 3: Remove the init script:`;
-    manualSteps += `\n  sudo rm ${initScriptPath}`;
-
+    const manualSteps: ServiceManualStep[] = [
+      {
+        text: "The uninstaller does not have (and should not have) root permissions, so the next steps have to be carried out manually.",
+      },
+      {
+        text: "Step 1: Stop the service (if it's running):",
+        command: `sudo service ${config.name} stop`,
+      },
+      {
+        text: "Step 2: Disable the service from starting at boot:",
+        command: `sudo update-rc.d -f ${config.name} remove`,
+      },
+      {
+        text: `Step 3: Remove the init script:`,
+        command: `sudo rm ${initScriptPath}`,
+      },
+    ];
     return {
       servicePath: initScriptPath,
       manualSteps,

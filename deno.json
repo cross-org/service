@@ -9,12 +9,12 @@
   },
   "imports": {
     "@cross/env": "jsr:@cross/env@^1.0.0",
-    "@cross/fs": "jsr:@cross/fs@^0.0.4",
+    "@cross/fs": "jsr:@cross/fs@^0.0.7",
     "@cross/runtime": "jsr:@cross/runtime@^1.0.0",
     "@cross/test": "jsr:@cross/test@^0.0.9",
     "@cross/utils": "jsr:@cross/utils@^0.8.2",
-    "@std/assert": "jsr:@std/assert@^0.220.1",
-    "@std/path": "jsr:@std/path@^0.220.1"
+    "@std/assert": "jsr:@std/assert@^0.221.0",
+    "@std/path": "jsr:@std/path@^0.221.0"
   },
   "publish": {
     "exclude": [".github", "*.test.ts"]

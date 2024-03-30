@@ -64,7 +64,17 @@ async function main(inputArgs: string[]) {
    */
   if (baseArgument === "install" || baseArgument === "generate") {
     try {
-      await installService({ system, name, cmd, cwd, user, home, path, env }, baseArgument === "generate", force);
+      const result = await installService({ system, name, cmd, cwd, user, home, path, env }, baseArgument === "generate", force);
+      if (baseArgument === "generate") {
+        console.log(result.serviceFileContent);
+      } else {
+        if (result.manualSteps) {
+          console.log("To complete the installation, carry out these manual steps:");
+          console.log(result.manualSteps);
+        } else {
+          console.log(`Service ´${name}' successfully installed at '${result.servicePath}'.`);
+        }
+      }
       exit(0);
     } catch (e) {
       console.error(`Could not install service, error: ${e.message}`);
@@ -75,7 +85,13 @@ async function main(inputArgs: string[]) {
      */
   } else if (baseArgument === "uninstall") {
     try {
-      await uninstallService({ system, name, home });
+      const result = await uninstallService({ system, name, home });
+      if (result.manualSteps) {
+        console.log(`Carry out these manual steps to complete the unistallation of '${name}'`);
+        console.log(result.manualSteps);
+      } else {
+        console.log(`Service '${name}' at '${result.servicePath}' is now uninstalled.`);
+      }
       exit(0);
     } catch (e) {
       console.error(`Could not install service, error: ${e.message}`);

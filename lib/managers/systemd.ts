@@ -9,8 +9,7 @@ import { exists, mkdir, mktempdir, unlink, writeFile } from "@cross/fs";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { dirname, join } from "@std/path";
 import { cwd, spawn } from "@cross/utils";
-import { getEnv } from "@cross/env";
-import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
+import { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
 
 const serviceFileTemplate = `[Unit]
 Description={{name}} (Deno Service)
@@ -76,16 +75,23 @@ class SystemdService {
       // Store temporary file
       const tempFilePath = await mktempdir("svcinstall");
       await writeFile(join(tempFilePath, "cfg"), serviceFileContent);
-      let manualSteps = "";
-      manualSteps += "\Service installer do not have (and should not have) root permissions, so the next steps have to be carried out manually.";
-      manualSteps += `\nStep 1: The systemd configuration has been saved to a temporary file, copy this file to the correct location using the following command:`;
-      manualSteps += `\n  sudo cp ${tempFilePath} ${servicePath}`;
-      manualSteps += `\nStep 2: Reload systemd configuration`;
-      manualSteps += `\n  sudo systemctl daemon-reload`;
-      manualSteps += `\nStep 3: Enable the service`;
-      manualSteps += `\n  sudo systemctl enable ${config.name}`;
-      manualSteps += `\nStep 4: Start the service now`;
-      manualSteps += `\n  sudo systemctl start ${config.name}\n`;
+      const manualSteps: ServiceManualStep[] = [];
+      manualSteps.push({
+        text: "The systemd configuration has been saved to a temporary file. Copy this file to the correct location using the following command:",
+        command: `sudo cp ${tempFilePath} ${servicePath}`,
+      });
+      manualSteps.push({
+        text: "Reload the systemd configuration:",
+        command: `sudo systemctl daemon-reload`,
+      });
+      manualSteps.push({
+        text: "Enable the service:",
+        command: `sudo systemctl enable ${config.name}`,
+      });
+      manualSteps.push({
+        text: "Start the service now:",
+        command: `sudo systemctl start ${config.name}`,
+      });
       return {
         servicePath: tempFilePath,
         serviceFileContent,
@@ -150,17 +156,16 @@ class SystemdService {
 
     try {
       await unlink(servicePath);
-      if (config.system) {
-        return {
-          servicePath,
-          manualSteps: "Please run the following command as root to reload the systemctl daemon:\nsudo systemctl daemon-reload",
-        };
-      } else {
-        return {
-          servicePath,
-          manualSteps: "Please run the following command as root to reload the systemctl daemon:\nsudo systemctl --user daemon-reload",
-        };
-      }
+      const manualSteps: ServiceManualStep[] = [];
+      const reloadCommand = config.system ? "sudo systemctl daemon-reload" : "systemctl --user daemon-reload";
+      manualSteps.push({
+        text: `Please run the following command to reload the systemctl daemon:`,
+        command: reloadCommand,
+      });
+      return {
+        servicePath,
+        manualSteps: manualSteps,
+      };
     } catch (error) {
       throw new Error(`Failed to uninstall service: Could not remove '${servicePath}'. Error: '${error.message}'`);
     }
@@ -173,7 +178,8 @@ class SystemdService {
    * @returns {string} The generated systemd service configuration file content as a string.
    */
   generateConfig(options: InstallServiceOptions): string {
-    const defaultPath = `PATH=${getEnv("PATH")}`;
+    const denoPath = Deno.execPath();
+    const defaultPath = `PATH=${denoPath}:${options.home}/.deno/bin`;
     const envPath = options.path ? `${defaultPath}:${options.path.join(":")}` : defaultPath;
     const workingDirectory = options.cwd ? options.cwd : cwd();
 

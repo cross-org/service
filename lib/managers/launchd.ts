@@ -8,8 +8,7 @@ import { exists, mkdir, unlink, writeFile } from "@cross/fs";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import { dirname } from "@std/path";
 import { cwd } from "@cross/utils";
-import { getEnv } from "@cross/env";
-import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
+import { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
 
 const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -41,8 +40,9 @@ class LaunchdService {
    * @returns {string} The generated Launchd plist configuration file content as a string.
    */
   generateConfig(options: InstallServiceOptions): string {
+    const denoPath = Deno.execPath();
     const commandArgs = options.cmd.split(" ");
-    const servicePath = `${options.path?.join(":")}:${getEnv("PATH")}`;
+    const servicePath = `${options.path?.join(":")}:${denoPath}:${options.home}/.deno/bin`;
     const workingDirectory = options.cwd ? options.cwd : cwd();
 
     let plistContent = plistTemplate.replace(/{{name}}/g, options.name);
@@ -99,15 +99,19 @@ class LaunchdService {
       await writeFile(plistPath, plistContent);
 
       // ToDo: Actually run the service and verify that it works, if not - use the rollback function
-      let manualSteps = "";
+      // Manual Step Generation
+      const manualSteps: ServiceManualStep[] = [];
       if (config.system) {
-        manualSteps += "Please run the following command as root to load the service:";
-        manualSteps += `sudo launchctl load ${plistPath}`;
+        manualSteps.push({
+          text: "Please run the following command as root to load the service:",
+          command: `sudo launchctl load ${plistPath}`,
+        });
       } else {
-        manualSteps += "Please run the following command to load the service:";
-        manualSteps += `launchctl load ${plistPath}`;
+        manualSteps.push({
+          text: "Please run the following command to load the service:",
+          command: `launchctl load ${plistPath}`,
+        });
       }
-
       return {
         servicePath: plistPath,
         serviceFileContent: plistContent,
@@ -152,13 +156,17 @@ class LaunchdService {
       await unlink(plistPath);
 
       // Unload the service
-      let manualSteps = "";
+      const manualSteps: ServiceManualStep[] = [];
       if (config.system) {
-        manualSteps += "Please run the following command as root to unload the service (if it's running):";
-        manualSteps += `sudo launchctl unload ${plistPath}`;
+        manualSteps.push({
+          text: "Please run the following command as root to unload the service (if it's running):",
+          command: `sudo launchctl unload ${plistPath}`,
+        });
       } else {
-        manualSteps += "Please run the following command to unload the service (if it's running):";
-        manualSteps += `launchctl unload ${plistPath}`;
+        manualSteps.push({
+          text: "Please run the following command to unload the service (if it's running):",
+          command: `launchctl unload ${plistPath}`,
+        });
       }
 
       return {

@@ -7,7 +7,7 @@ import { ServiceInstallResult, ServiceUninstallResult } from "./result.ts";
 import { CurrentOS, OperatingSystem } from "@cross/runtime";
 import { getEnv } from "@cross/env";
 import { cwd, spawn } from "@cross/utils";
-import { stat } from "node:fs/promises";
+import { stat } from "@cross/fs";
 
 /**
  * Exports helper functions to install any command as a system service
@@ -127,15 +127,13 @@ serviceManager.register("upstart", new UpstartService());
 serviceManager.register("launchd", new LaunchdService());
 serviceManager.register("windows", new WindowsService());
 
-async function installService(options: InstallServiceOptions, onlyGenerate: boolean, forceInitSystem?: string) {
+async function installService(options: InstallServiceOptions, onlyGenerate: boolean, forceInitSystem?: string): Promise<ServiceInstallResult> {
   if (forceInitSystem && !onlyGenerate) {
     throw new Error("Manually selecting an init system is not possible while installing.");
   }
-
   const config = prepareConfig(options);
-
   const initSystem = forceInitSystem || await detectInitSystem();
-  await serviceManager.installService(initSystem, config, onlyGenerate);
+  return await serviceManager.installService(initSystem, config, onlyGenerate);
 }
 
 /**
@@ -146,11 +144,10 @@ async function installService(options: InstallServiceOptions, onlyGenerate: bool
  * @function uninstallService
  * @param {InstallServiceOptions} options - Options for the uninstallService function.
  */
-async function uninstallService(options: UninstallServiceOptions, forceInitSystem?: string) {
+async function uninstallService(options: UninstallServiceOptions, forceInitSystem?: string): Promise<ServiceUninstallResult> {
   const config = prepareConfig(options);
-
   const initSystem = forceInitSystem || await detectInitSystem();
-  await serviceManager.uninstallService(initSystem, config);
+  return await serviceManager.uninstallService(initSystem, config);
 }
 
 /**
@@ -184,7 +181,7 @@ async function detectInitSystem(): Promise<string> {
     try {
       const statInitCtl = await stat("/sbin/initctl");
       const statInit = await stat("/etc/init");
-      if (statInitCtl.isFile() && statInit.isDirectory()) {
+      if (statInitCtl.isFile && statInit.isDirectory) {
         return "upstart";
       } else {
         return "sysvinit";

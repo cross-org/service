@@ -7,9 +7,9 @@
 
 import { exists, mktempdir, unlink, writeFile } from "@cross/fs";
 import { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
-import { getEnv } from "@cross/env";
 import { join } from "@std/path";
-import { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
+import { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
+import { cwd } from "@cross/utils";
 
 const upstartFileTemplate = `# {{name}} (Deno Service)
 
@@ -28,7 +28,11 @@ env PATH={{path}}
 # Change the next line to match your service installation
 env SERVICE_COMMAND="{{command}}"
 
+chdir {{workingDirectory}}
+
 exec $SERVICE_COMMAND
+
+console log
 `;
 
 class UpstartService {
@@ -38,8 +42,10 @@ class UpstartService {
    * @returns The generated Upstart configuration file content.
    */
   generateConfig(config: InstallServiceOptions): string {
-    const defaultPath = getEnv("PATH") || "";
+    const denoPath = Deno.execPath();
+    const defaultPath = `${denoPath}:${config.home}/.deno/bin`;
     const envPath = config.path ? `${defaultPath}:${config.path.join(":")}` : defaultPath;
+    const workingDirectory = config.cwd ? config.cwd : cwd();
 
     let upstartFileContent = upstartFileTemplate.replace(
       /{{name}}/g,
@@ -48,6 +54,10 @@ class UpstartService {
     upstartFileContent = upstartFileContent.replace(
       "{{command}}",
       config.cmd,
+    );
+    upstartFileContent = upstartFileContent.replace(
+      "{{workingDirectory}}",
+      workingDirectory,
     );
     upstartFileContent = upstartFileContent.replace("{{path}}", envPath);
 
@@ -91,16 +101,20 @@ class UpstartService {
       const tempFileDir = await mktempdir("svc-installer");
       const tempFilePath = join(tempFileDir, "svc-upstart");
       await writeFile(tempFilePath, upstartFileContent);
-      let manualSteps = "";
-      manualSteps += "\Service installer do not have (and should not have) root permissions, so the next steps have to be carried out manually.";
-      manualSteps += `\nStep 1: The upstart configuration has been saved to a temporary file, copy this file to the correct location using the following command:`;
-      manualSteps += `\n  sudo cp ${tempFilePath} ${upstartFilePath}`;
-      manualSteps += `\nStep 2: Start the service now`;
-      manualSteps += `\n  sudo start ${config.name}\n`;
+      const manualSteps: ServiceManualStep[] = [];
+      manualSteps.push({
+        text: "The Upstart configuration has been saved to a temporary file. Copy this file to the correct location using the following command:",
+        command: `sudo cp ${tempFilePath} ${upstartFilePath}`,
+      });
+      manualSteps.push({
+        text: "Start the service now:",
+        command: `sudo start ${config.name}`,
+      });
+
       return {
         servicePath: tempFilePath,
         serviceFileContent: upstartFileContent,
-        manualSteps: manualSteps,
+        manualSteps: manualSteps, // Assign structured steps
       };
     }
   }
@@ -119,9 +133,15 @@ class UpstartService {
 
     try {
       await unlink(upstartFilePath);
+      const manualSteps: ServiceManualStep[] = [];
+      const reloadCommand = `sudo stop ${config.name}`;
+      manualSteps.push({
+        text: `Please run the following commands as root to stop the service and reload the systemctl daemon:`,
+        command: reloadCommand,
+      });
       return {
         servicePath: upstartFilePath,
-        manualSteps: `Please run the following command as root to reload the systemctl daemon:\nsudo systemctl daemon-reload\nsudo stop ${config.name}`,
+        manualSteps: manualSteps, // Assign structured steps
       };
     } catch (error) {
       throw new Error(
