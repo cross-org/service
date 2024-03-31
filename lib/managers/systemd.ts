@@ -74,11 +74,12 @@ class SystemdService {
     } else if (config.system) {
       // Store temporary file
       const tempFilePath = await mktempdir("svcinstall");
-      await writeFile(join(tempFilePath, "cfg"), serviceFileContent);
+      const tempFileFullPath = join(tempFilePath, "cfg");
+      await writeFile(tempFileFullPath, serviceFileContent);
       const manualSteps: ServiceManualStep[] = [];
       manualSteps.push({
         text: "The systemd configuration has been saved to a temporary file. Copy this file to the correct location using the following command:",
-        command: `sudo cp ${tempFilePath} ${servicePath}`,
+        command: `sudo cp ${tempFileFullPath} ${servicePath}`,
       });
       manualSteps.push({
         text: "Reload the systemd configuration:",
@@ -153,15 +154,34 @@ class SystemdService {
     if (!await exists(servicePath)) {
       throw new Error(`Service '${config.name}' does not exist.`);
     }
-
     try {
-      await unlink(servicePath);
       const manualSteps: ServiceManualStep[] = [];
-      const reloadCommand = config.system ? "sudo systemctl daemon-reload" : "systemctl --user daemon-reload";
-      manualSteps.push({
-        text: `Please run the following command to reload the systemctl daemon:`,
-        command: reloadCommand,
-      });
+      if (config.system) {
+        const removeCommand = `sudo rm ${servicePathSystem}`;
+        const stopCommand = `sudo systemctl stop ${config.name}`;
+        const reloadCommand = "sudo systemctl daemon-reload";
+        manualSteps.push(
+          {
+            text: `Please run this command to stop the service:`,
+            command: stopCommand,
+          },
+          {
+            text: `Please run the following command to remove the service:`,
+            command: removeCommand,
+          },
+          {
+            text: `And this command to reload the systemctl daemon:`,
+            command: reloadCommand,
+          },
+        );
+      } else {
+        const stopServiceCommand = await spawn(["systemctl", "--user", "stop", config.name]);
+        await unlink(servicePath);
+        const reloadServiceCommand = await spawn(["systemctl", "--user", "daemon-reload"]);
+        if (!(stopServiceCommand.code === 0 && reloadServiceCommand.code === 0)) {
+          throw new Error("Could not remove the service.");
+        }
+      }
       return {
         servicePath,
         manualSteps: manualSteps,
