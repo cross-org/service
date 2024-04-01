@@ -1,7 +1,7 @@
 # @cross/service
 
 Service is a JavaScript/TypeScript module for managing system services. It offers a convenient way to install, uninstall, and generate service configurations for various service managers. It can be
-used as either a command line tool, or a typescript library for direct integration in other programs.
+used as either a command line tool, or a typescript library for direct integration in other Node/Deno/Bun programs.
 
 Part of the @cross suite - check out our growing collection of cross-runtime tools at [github.com/cross-org](https://github.com/cross-org).
 
@@ -12,6 +12,7 @@ Part of the @cross suite - check out our growing collection of cross-runtime too
 - Install, uninstall, and generate service configurations
 - Compatible with systemd, sysvinit, docker-init, upstart (Linux), launchd (macOS) and SCM (Windows) service managers
 - Installs any script as service on any system.
+- Cross-Runtime and Cross-Platform.
 
 ## Installation
 
@@ -67,6 +68,8 @@ Note:
 ## Programmatic Usage
 
 To use the service library programmatically, you can import and use the `installService`, `generateConfig` and `uninstallService` functions.
+
+Install for your runtime according to the instructions at [https://jsr.io/@cross/service].
 
 ### InstallServiceOptions
 
