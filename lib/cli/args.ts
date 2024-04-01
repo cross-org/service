@@ -62,6 +62,13 @@ function checkArguments(args: ArgsParser): ArgsParser {
     throw new Error("Service name must be specified.");
   }
 
+  // Check characters of name
+  const validServiceNameCharsRegex = /^[a-zA-Z0-9_-]+$/;
+  const serviceName = args.get("name")!; // Assuming you fetch the name here
+  if (!validServiceNameCharsRegex.test(serviceName)) {
+    throw new Error("Service name contains invalid characters. Only letters, numbers, underscores, and hyphens are allowed.");
+  }
+
   return args;
 }
 

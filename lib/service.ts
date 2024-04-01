@@ -6,6 +6,7 @@ import { WindowsService } from "./managers/windows.ts";
 import { CurrentOS, OperatingSystem } from "@cross/runtime";
 import { getEnv } from "@cross/env";
 import { cwd, spawn } from "@cross/utils";
+import type { SpawnResult } from "@cross/utils";
 import { stat } from "@cross/fs";
 import type { ServiceInstallResult, ServiceUninstallResult } from "./result.ts";
 /**
@@ -126,13 +127,23 @@ serviceManager.register("upstart", new UpstartService());
 serviceManager.register("launchd", new LaunchdService());
 serviceManager.register("windows", new WindowsService());
 
-async function installService(options: InstallServiceOptions, onlyGenerate: boolean, forceInitSystem?: string): Promise<ServiceInstallResult> {
-  if (forceInitSystem && !onlyGenerate) {
+/**
+ * Installs a command as a system service on the detected operating system.
+ * Throws an error on unsupported init systems.
+ *
+ * @async
+ * @param options - Configuration options for the service installation. See {@link InstallServiceOptions}
+ * @param dryRun - If true, only generates the service configuration and paths without installing it.
+ * @param forceInitSystem - Optionally override auto-detection of the init system (for testing purposes).
+ * @returns - A promise resolving to a {@link ServiceInstallResult} object, indicating the success/failure of the installation.
+ */
+async function installService(options: InstallServiceOptions, dryRun: boolean, forceInitSystem?: string): Promise<ServiceInstallResult> {
+  if (forceInitSystem) {
     throw new Error("Manually selecting an init system is not possible while installing.");
   }
   const config = prepareConfig(options);
   const initSystem = forceInitSystem || await detectInitSystem();
-  return await serviceManager.installService(initSystem, config, onlyGenerate);
+  return await serviceManager.installService(initSystem, config, dryRun);
 }
 
 /**
@@ -163,15 +174,26 @@ async function generateConfig(options: InstallServiceOptions, forceInitSystem?: 
 }
 
 async function detectInitSystem(): Promise<string> {
+  // Assume launcd on macOS
   if (CurrentOS === OperatingSystem.macOS) {
     return "launchd";
   }
 
+  // Assume windows service manager on windows
   if (CurrentOS === OperatingSystem.Windows) {
     return "windows";
   }
 
-  const process = await spawn(["ps", "-p", "1", "-o", "comm="]);
+  let process: SpawnResult | undefined;
+  try {
+    process = await spawn(["ps", "-p", "1", "-o", "comm="]);
+  } catch (e) {
+    throw new Error(`Unexpected error while determining init system: ${e.message}`);
+  }
+
+  if (process.code !== 0) {
+    throw new Error(`Unexpected error while determining init system: ${process.stderr || process.stdout}`);
+  }
 
   if (process.stdout.includes("systemd")) {
     return "systemd";

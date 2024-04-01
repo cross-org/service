@@ -9,7 +9,7 @@
 import { printFlags, printUsage } from "./output.ts";
 import { checkArguments, parseArguments } from "./args.ts";
 import { installService, uninstallService } from "../service.ts";
-import { exit } from "@cross/utils";
+import { Colors, exit } from "@cross/utils";
 
 /**
  * Define the main entry point of the CLI application
@@ -69,8 +69,13 @@ async function main(inputArgs: string[]) {
         console.log(result.serviceFileContent);
       } else {
         if (result.manualSteps && result.manualSteps.length) {
-          console.log("To complete the installation, carry out these manual steps:");
-          console.log(result.manualSteps);
+          console.log(Colors.bold("To complete the installation, carry out these manual steps:"));
+          result.manualSteps.forEach((step, index) => {
+            console.log(Colors.cyan(`${index + 1}. ${step.text}`));
+            if (step.command) {
+              console.log("   " + Colors.yellow("Command: ") + step.command);
+            }
+          });
         } else {
           console.log(`Service ´${name}' successfully installed at '${result.servicePath}'.`);
         }
@@ -87,8 +92,13 @@ async function main(inputArgs: string[]) {
     try {
       const result = await uninstallService({ system, name, home });
       if (result.manualSteps && result.manualSteps.length) {
-        console.log(`Carry out these manual steps to complete the unistallation of '${name}'`);
-        console.log(result.manualSteps);
+        console.log(Colors.bold("To complete the uninstallation, carry out these manual steps:"));
+        result.manualSteps.forEach((step, index) => {
+          console.log(Colors.cyan(`${index + 1}. ${step.text}`));
+          if (step.command) {
+            console.log("   " + Colors.yellow("Command: ") + step.command);
+          }
+        });
       } else {
         console.log(`Service '${name}' at '${result.servicePath}' is now uninstalled.`);
       }

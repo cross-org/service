@@ -71,8 +71,8 @@ class InitService {
   async generateConfig(config: InstallServiceOptions): Promise<string> {
     const runtimePath = await resolvedExecPath();
     const runtimeDir = dirname(runtimePath);
-    const command = config.cmd;
     const servicePath = config.path?.length ? `${config.path?.join(":")}:${runtimeDir}` : runtimeDir;
+    const command = config.cmd;
     let initScriptContent = initScriptTemplate.replace(/{{name}}/g, config.name);
     initScriptContent = initScriptContent.replace("{{command}}", command);
     initScriptContent = initScriptContent.replace("{{path}}", servicePath);
