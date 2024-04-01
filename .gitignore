@@ -108,3 +108,8 @@ dist
 
 # Deno
 deno.lock
+
+# Node/Bun meta files
+.npmrc
+package-lock.json
+package.json
