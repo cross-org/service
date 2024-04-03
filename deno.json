@@ -1,6 +1,6 @@
 {
   "name": "@cross/service",
-  "version": "1.0.0-rc.2",
+  "version": "1.0.0",
   "fmt": {
     "lineWidth": 200
   },
