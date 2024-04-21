@@ -9,6 +9,7 @@ import { exists, mkdir, unlink, writeFile } from "@cross/fs";
 import { cwd, spawn } from "@cross/utils";
 import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import type { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
+import { CurrentRuntime, Runtime } from "@cross/runtime";
 
 class WindowsService {
   constructor() {}
@@ -128,7 +129,11 @@ class WindowsService {
    * @returns {string} The generated batch file content as a string.
    */
   async generateConfig(options: InstallServiceOptions): Promise<string> {
-    const defaultPath = `%PATH%;`;
+    let defaultPath = "%PATH%;";
+    if (CurrentRuntime === Runtime.Deno) {
+      const denoPath = Deno.execPath();
+      defaultPath += `${denoPath};${options.home}\\.deno\\bin`;
+    }
     const envPath = options.path ? `${defaultPath};${options.path.join(";")}` : defaultPath;
     const workingDirectory = options.cwd ? options.cwd : cwd();
 
