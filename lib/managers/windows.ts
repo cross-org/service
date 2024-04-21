@@ -6,7 +6,8 @@
  */
 
 import { exists, mkdir, unlink, writeFile } from "@cross/fs";
-import { cwd, spawn } from "@cross/utils";
+import { spawn } from "@cross/utils";
+import { cwd } from "@cross/fs";
 import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 import type { ServiceInstallResult, ServiceUninstallResult } from "../result.ts";
 import { CurrentRuntime, Runtime } from "@cross/runtime";

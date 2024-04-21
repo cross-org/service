@@ -5,9 +5,9 @@ import { LaunchdService } from "./managers/launchd.ts";
 import { WindowsService } from "./managers/windows.ts";
 import { CurrentOS, OperatingSystem } from "@cross/runtime";
 import { getEnv } from "@cross/env";
-import { cwd, spawn } from "@cross/utils";
+import { spawn } from "@cross/utils";
 import type { SpawnResult } from "@cross/utils";
-import { stat } from "@cross/fs";
+import { cwd, stat } from "@cross/fs";
 import type { ServiceInstallResult, ServiceUninstallResult } from "./result.ts";
 /**
  * Exports helper functions to install any command as a system service

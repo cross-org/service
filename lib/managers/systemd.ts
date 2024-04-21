@@ -5,9 +5,9 @@
  * @license   MIT
  */
 
-import { exists, mkdir, mktempdir, unlink, writeFile } from "@cross/fs";
+import { cwd, exists, mkdir, mktempdir, unlink, writeFile } from "@cross/fs";
 import { dirname, join } from "@std/path";
-import { cwd, resolvedExecPath, spawn } from "@cross/utils";
+import { resolvedExecPath, spawn } from "@cross/utils";
 import type { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
 import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 

@@ -4,9 +4,9 @@
  * @file      lib/managers/launchd.ts
  * @license   MIT
  */
-import { exists, mkdir, unlink, writeFile } from "@cross/fs";
+import { cwd, exists, mkdir, unlink, writeFile } from "@cross/fs";
 import { dirname } from "@std/path";
-import { cwd, resolvedExecPath } from "@cross/utils";
+import { resolvedExecPath } from "@cross/utils";
 import type { ServiceInstallResult, ServiceManualStep, ServiceUninstallResult } from "../result.ts";
 import type { InstallServiceOptions, UninstallServiceOptions } from "../service.ts";
 const plistTemplate = `<?xml version="1.0" encoding="UTF-8"?>
