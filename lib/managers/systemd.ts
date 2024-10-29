@@ -187,7 +187,7 @@ class SystemdService {
         manualSteps: manualSteps,
       };
     } catch (error) {
-      throw new Error(`Failed to uninstall service: Could not remove '${servicePath}'. Error: '${error.message}'`);
+      throw new Error(`Failed to uninstall service: Could not remove '${servicePath}'. Error: '${(error as Error).message}'`);
     }
   }
 
@@ -246,7 +246,7 @@ class SystemdService {
         throw new Error("Failed to reload daemon while rolling back.");
       }
     } catch (error) {
-      throw new Error(`Failed to rollback changes: Could not remove '${servicePath}'. Error: '${error.message}'`);
+      throw new Error(`Failed to rollback changes: Could not remove '${servicePath}'. Error: '${(error as Error).message}'`);
     }
   }
 }

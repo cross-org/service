@@ -187,8 +187,8 @@ async function detectInitSystem(): Promise<string> {
   let process: SpawnResult | undefined;
   try {
     process = await spawn(["ps", "-p", "1", "-o", "comm="]);
-  } catch (e) {
-    throw new Error(`Unexpected error while determining init system: ${e.message}`);
+  } catch (e: unknown) {
+    throw new Error(`Unexpected error while determining init system: ${(e as Error).message}`);
   }
 
   if (process.code !== 0) {

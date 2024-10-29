@@ -23,7 +23,7 @@ async function main(inputArgs: string[]) {
   try {
     args = parseArguments(inputArgs);
   } catch (e) {
-    console.error(e.message);
+    console.error((e as Error).message);
     exit(1);
     return;
   }
@@ -43,7 +43,7 @@ async function main(inputArgs: string[]) {
   try {
     args = checkArguments(args);
   } catch (e) {
-    console.error(e.message);
+    console.error((e as Error).message);
     exit(1);
     return;
   }
@@ -82,7 +82,7 @@ async function main(inputArgs: string[]) {
       }
       exit(0);
     } catch (e) {
-      console.error(`Could not install service, error: ${e.message}`);
+      console.error(`Could not install service, error: ${(e as Error).message}`);
       exit(1);
     }
     /**
@@ -104,7 +104,7 @@ async function main(inputArgs: string[]) {
       }
       exit(0);
     } catch (e) {
-      console.error(`Could not uninstall service, error: ${e.message}`);
+      console.error(`Could not uninstall service, error: ${(e as Error).message}`);
       exit(1);
     }
   } else {

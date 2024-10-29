@@ -145,7 +145,7 @@ class UpstartService {
       };
     } catch (error) {
       throw new Error(
-        `Failed to uninstall service: Could not remove '${upstartFilePath}'. Error: '${error.message}`,
+        `Failed to uninstall service: Could not remove '${upstartFilePath}'. Error: '${(error as Error).message}`,
       );
     }
   }

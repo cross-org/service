@@ -119,7 +119,7 @@ class WindowsService {
         manualSteps: null,
       };
     } catch (error) {
-      throw new Error(`Failed to uninstall service: Could not remove '${serviceBatchPath}'. Error: '${error.message}'`);
+      throw new Error(`Failed to uninstall service: Could not remove '${serviceBatchPath}'. Error: '${(error as Error).message}'`);
     }
   }
 
@@ -166,7 +166,7 @@ class WindowsService {
     try {
       await unlink(serviceBatchPath);
     } catch (error) {
-      console.error(`Failed to rollback changes: Could not remove '${serviceBatchPath}'. Error:`, error.message);
+      console.error(`Failed to rollback changes: Could not remove '${serviceBatchPath}'. Error:`, (error as Error).message);
     }
   }
 }

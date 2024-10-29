@@ -130,7 +130,7 @@ class LaunchdService {
     try {
       await unlink(plistPath);
     } catch (error) {
-      throw new Error(`Failed to rollback changes: Could not remove '${plistPath}'. Error: ${error.message}`);
+      throw new Error(`Failed to rollback changes: Could not remove '${plistPath}'. Error: ${(error as Error).message}`);
     }
   }
 
@@ -174,7 +174,7 @@ class LaunchdService {
         manualSteps,
       };
     } catch (error) {
-      throw new Error(`Failed to uninstall service: Could not remove '${plistPath}'. Error:`, error.message);
+      throw new Error(`Failed to uninstall service: Could not remove '${plistPath}'. Error:`, error as Error);
     }
   }
 }
