@@ -149,7 +149,7 @@ class WindowsService {
       }
     }
 
-    batchFileContent += `deno run -A --allow-ffi --unstable https://deno.land/x/windows_service@1.0.11/run.ts --serviceName ${options.name} -- ${options.cmd}\n`;
+    batchFileContent += `deno run --allow-ffi --unstable https://deno.land/x/windows_service@1.0.11/run.ts --serviceName ${options.name} -- ${options.cmd}\n`;
     await true;
 
     return batchFileContent;

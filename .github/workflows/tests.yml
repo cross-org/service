@@ -1,11 +1,11 @@
 name: Testing CI
 
-on: 
+on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:  # Allow manual runs
+  workflow_dispatch: # Allow manual runs
 
 jobs:
   deno_ci:

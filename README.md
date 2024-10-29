@@ -19,7 +19,7 @@ Part of the @cross suite - check out our growing collection of cross-runtime too
 To use Service as a CLI program, you can install or upgrade it using Deno:
 
 ```sh
-deno install -frA --name cross-service jsr:@cross/service/install
+deno install -frA --global --name cross-service jsr:@cross/service/install
 ```
 
 For library usage in Node, Deno or Bun - install according to the instructions at [jsr.io/@cross/service](https://jsr.io/@cross/service) and simply import the `installService()` function from the:
