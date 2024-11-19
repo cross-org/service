@@ -62,10 +62,27 @@ class WindowsService {
         "-Verb",
         "RunAs",
       ];
+      // Try to install the service
       const installService = await spawn(psAndArgs);
       if (installService.code !== 0) {
         await this.rollback(serviceBatchPath);
         throw new Error("Failed to install service. Error: \n" + installService.stdout + installService.stderr);
+      }
+      // Force start the service
+      const startArgs = `start ${config.name}`;
+      const startService = await spawn([
+        "powershell.exe",
+        "-Command",
+        "Start-Process",
+        "sc.exe",
+        "-ArgumentList",
+        `'${startArgs}'`,
+        "-Verb",
+        "RunAs",
+      ]);
+      if (startService.code !== 0) {
+        await this.rollback(serviceBatchPath);
+        throw new Error(`Failed to start service. Error: \n${startService.stderr}`);
       }
       return {
         servicePath: serviceBatchPath,
