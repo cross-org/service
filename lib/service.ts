@@ -73,7 +73,7 @@ function prepareConfig<T extends InstallServiceOptions | UninstallServiceOptions
     name: options.name || "deno-service",
     home: options.home || getEnv("HOME") || getEnv("userprofile"),
     cmd: "cmd" in options ? options.cmd : undefined,
-    user: "user" in options ? options.user || getEnv("USER") : undefined,
+    user: ("user" in options ? options.user : undefined) || getEnv("USER"),
     cwd: "cwd" in options ? options.cwd || cwd() : undefined,
     path: "path" in options ? options.path : undefined,
     env: "env" in options ? options.env : undefined,

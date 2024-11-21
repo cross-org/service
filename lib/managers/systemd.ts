@@ -55,7 +55,7 @@ class SystemdService {
     // Automatically enable linger for current user using loginctl if running in user mode
     if (!config.system && !onlyGenerate) {
       if (!config.user) {
-        throw new Error("Username not found in $USER, must be specified using the --username flag or via the username option.");
+        throw new Error("Username not found in $USER, must be specified using the --username flag or via the user option.");
       }
       const enableLinger = await spawn(["loginctl", "enable-linger", config.user]);
       if (enableLinger.code !== 0) {
